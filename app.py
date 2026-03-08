@@ -112,47 +112,70 @@ html, body, [class*="css"] {
 [data-testid="stToolbar"] { visibility: hidden !important; }
 [data-testid="stDecoration"] { display: none !important; }
 
-/* ══ SIDEBAR TOGGLE ══ */
+/* ══ SIDEBAR TOGGLE — always visible blue glass pill ══ */
 [data-testid="collapsedControl"] {
-    visibility: visible !important; display: flex !important;
-    opacity: 1 !important; pointer-events: all !important;
+    visibility: visible !important;
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
     z-index: 999999 !important;
-    background: rgba(255,255,255,0.55) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(255,255,255,0.65) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
     border-radius: 0 14px 14px 0 !important;
-    border: 1px solid rgba(255,255,255,0.7) !important;
-    box-shadow: 2px 0 16px rgba(80,130,255,0.18) !important;
+    border: 1.5px solid rgba(255,255,255,0.9) !important;
+    box-shadow: 3px 0 20px rgba(58,123,213,0.25),
+                inset 0 1px 0 rgba(255,255,255,1) !important;
+    padding: 10px 8px !important;
+    min-width: 36px !important;
+    min-height: 44px !important;
 }
-[data-testid="collapsedControl"] svg { fill: #3a7bd5 !important; }
-[data-testid="stSidebarCollapseButton"] { visibility: visible !important; pointer-events: all !important; }
+[data-testid="collapsedControl"] svg {
+    fill: #3a7bd5 !important;
+    stroke: #3a7bd5 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+[data-testid="collapsedControl"] button {
+    background: transparent !important;
+    border: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: all !important;
+}
+[data-testid="stSidebarCollapseButton"] {
+    visibility: visible !important;
+    pointer-events: all !important;
+}
 
 /* ══ SIDEBAR ══ */
 [data-testid="stSidebar"] {
-    background: rgba(220,235,255,0.75) !important;
-    backdrop-filter: blur(40px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-    border-right: 1px solid rgba(255,255,255,0.6) !important;
-    box-shadow: 4px 0 32px rgba(80,130,255,0.12) !important;
+    background: rgba(210,228,255,0.82) !important;
+    backdrop-filter: blur(40px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+    border-right: 1.5px solid rgba(255,255,255,0.75) !important;
+    box-shadow: 6px 0 40px rgba(80,130,255,0.15) !important;
 }
 [data-testid="stSidebar"] * { color: #1a3060 !important; }
 [data-testid="stSidebarContent"] { padding: 24px 18px !important; }
 [data-testid="stRadio"] label {
-    background: rgba(255,255,255,0.5) !important;
-    border: 1px solid rgba(255,255,255,0.8) !important;
+    background: rgba(255,255,255,0.55) !important;
+    border: 1px solid rgba(255,255,255,0.85) !important;
     border-radius: 12px !important; padding: 10px 14px !important;
     margin: 4px 0 !important; transition: all .2s !important;
-    backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
 }
 [data-testid="stRadio"] label:hover {
-    background: rgba(255,255,255,0.75) !important;
+    background: rgba(255,255,255,0.82) !important;
     box-shadow: 0 2px 12px rgba(80,130,255,0.15) !important;
 }
 [data-testid="stSelectbox"] > div > div {
-    background: rgba(255,255,255,0.5) !important;
-    border: 1px solid rgba(255,255,255,0.8) !important;
+    background: rgba(255,255,255,0.55) !important;
+    border: 1px solid rgba(255,255,255,0.85) !important;
     border-radius: 12px !important; color: #1a3060 !important;
-    backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
 }
 
 /* ══ ALL BUTTONS — glass style ══ */
@@ -510,15 +533,16 @@ with st.sidebar:
     <div style='text-align:center;padding:16px 0 20px;'>
         <div style='width:64px;height:64px;border-radius:50%;
             background:linear-gradient(135deg,rgba(58,123,213,0.85),rgba(100,160,255,0.8));
-            backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            display:flex;align-items:center;justify-content:center;
             font-size:28px;margin:0 auto 12px;
-            border:1.5px solid rgba(255,255,255,0.7);
+            border:1.5px solid rgba(255,255,255,0.75);
             box-shadow:0 6px 24px rgba(58,123,213,0.3);'>🩺</div>
-        <div style='font-size:16px;font-weight:800;color:#1a3060;'>AI Healthcare</div>
-        <div style='font-size:11px;color:rgba(58,100,180,0.6);margin-top:4px;font-weight:500;'>
+        <div style='font-size:16px;font-weight:800;color:#0d2050;'>AI Healthcare</div>
+        <div style='font-size:11px;color:rgba(58,100,180,0.65);margin-top:4px;font-weight:500;'>
             v2.0 · M.Tech AI</div>
     </div>
-    <div style='height:1px;background:rgba(80,130,255,0.15);margin-bottom:18px;'></div>
+    <div style='height:1px;background:rgba(80,130,255,0.18);margin-bottom:18px;'></div>
     """, unsafe_allow_html=True)
 
     language   = st.radio("🌐 Language / ভাষা", ["English", "Bengali"], index=0)
@@ -540,14 +564,13 @@ with st.sidebar:
             index=0,
             help="BD = Bangladesh accent · IN = West Bengal / India accent",
         )
-        # Extract just the voice ID (first token before ·)
         bengali_voice_id = bn_voice.split(" ·")[0].strip()
     else:
         bengali_voice_id = "bn-BD-NabanitaNeural"
 
     st.markdown("""
-    <div style='height:1px;background:rgba(80,130,255,0.15);margin:16px 0;'></div>
-    <div style='font-size:10px;color:rgba(58,100,180,0.55);letter-spacing:.12em;
+    <div style='height:1px;background:rgba(80,130,255,0.18);margin:16px 0;'></div>
+    <div style='font-size:10px;color:rgba(58,100,180,0.6);letter-spacing:.12em;
         text-transform:uppercase;font-weight:700;margin-bottom:10px;'>Powered by</div>
     <div style='font-size:13px;color:#2a4a80;line-height:2.2;'>
         🧠 LLaMA-4 Scout Vision<br>
@@ -555,11 +578,12 @@ with st.sidebar:
         🔊 ElevenLabs / edge-tts / gTTS<br>
         🌐 Deep Translator
     </div>
-    <div style='height:1px;background:rgba(80,130,255,0.15);margin:16px 0;'></div>
-    <div style='background:rgba(255,255,255,0.5);border-radius:14px;padding:12px 14px;
-        border:1px solid rgba(255,255,255,0.8);
-        backdrop-filter:blur(16px);box-shadow:0 2px 12px rgba(80,130,255,0.1);'>
-        <div style='font-size:13px;font-weight:700;color:#1a3060;'>Raja Biswas</div>
+    <div style='height:1px;background:rgba(80,130,255,0.18);margin:16px 0;'></div>
+    <div style='background:rgba(255,255,255,0.55);border-radius:14px;padding:12px 14px;
+        border:1px solid rgba(255,255,255,0.85);
+        backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+        box-shadow:0 2px 12px rgba(80,130,255,0.1);'>
+        <div style='font-size:13px;font-weight:700;color:#0d2050;'>Raja Biswas</div>
         <div style='font-size:11px;color:rgba(58,100,180,0.65);margin-top:2px;'>
             M.Tech (AI) · Healthcare AI</div>
     </div>
