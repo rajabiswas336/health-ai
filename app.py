@@ -22,7 +22,7 @@ st.set_page_config(
     page_title="AI Healthcare Assistant",
     page_icon="🫀",
     layout="centered",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── API Keys — read AFTER set_page_config so st.secrets is available ──────────
@@ -76,25 +76,14 @@ html, body, [class*="css"] {
 footer { visibility: hidden; }
 [data-testid="stDecoration"] { display: none !important; }
 [data-testid="stStatusWidget"] { display: none !important; }
-/* Hide toolbar deploy buttons only, not the header itself */
 [data-testid="stToolbar"] { visibility: hidden !important; }
 
-/* ════ SIDEBAR TOGGLE — working version ════ */
+/* ════ SIDEBAR TOGGLE BUTTON — make it always visible ════ */
 [data-testid="collapsedControl"] {
-    visibility: visible !important;
-    display: flex !important;
-    opacity: 1 !important;
-    pointer-events: all !important;
-    z-index: 9999999 !important;
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    border-radius: 0 10px 10px 0 !important;
-    box-shadow: 2px 2px 8px rgba(45,184,138,0.4) !important;
+    display: none !important;
 }
-[data-testid="collapsedControl"] svg { fill: white !important; }
-[data-testid="stSidebarCollapseButton"] {
-    visibility: visible !important;
-    pointer-events: all !important;
-}
+[data-testid="stSidebar"] { display: none !important; }
+/* Sidebar itself */
 [data-testid="stSidebar"] {
     background: #ffffff !important;
     border-right: 1px solid #e0eef4 !important;
@@ -338,6 +327,21 @@ hr { border-color: #e0eae4 !important; }
 ::-webkit-scrollbar-thumb { background: #b8d8cc; border-radius: 4px; }
 .block-container { max-width: 700px !important; padding: 12px 10px 80px !important; margin: 0 auto !important; }
 [data-testid="stSpinner"] p { color: #2db88a !important; }
+
+/* ════ EXPANDER (settings) ════ */
+[data-testid="stExpander"] {
+    background: #ffffff !important;
+    border: 1.5px solid #c8e8dc !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 12px rgba(45,184,138,0.08) !important;
+    margin-bottom: 12px !important;
+}
+[data-testid="stExpander"] summary {
+    color: #1a7a5e !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+}
+[data-testid="stExpander"] summary:hover { color: #2db88a !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -464,29 +468,17 @@ CHAT_PROMPT = (
 )
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("""
-    <div style='text-align:center;padding:8px 0 18px;'>
-        <div style='width:60px;height:60px;border-radius:50%;
-            background:linear-gradient(135deg,#2db88a,#1a9e70);
-            display:flex;align-items:center;justify-content:center;
-            font-size:28px;margin:0 auto 10px;
-            box-shadow:0 4px 16px rgba(45,184,138,0.3);'>🩺</div>
-        <div style='font-size:15px;font-weight:800;color:#1a5040;'>AI Healthcare</div>
-        <div style='font-size:11px;color:#7aaa9a;margin-top:4px;font-weight:500;'>
-            v2.0 · M.Tech AI</div>
-    </div>
-    <div style='height:1px;background:#e0eae4;margin-bottom:18px;'></div>
-    """, unsafe_allow_html=True)
-
-    language   = st.radio("🌐 Language / ভাষা", ["English", "Bengali"], index=0)
-    tts_engine = st.selectbox(
-        "🔊 Voice Engine",
-        ["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"],
-        index=0 if language == "English" else 1,
-    )
-
+# ── Settings expander (replaces sidebar — works on all devices) ───────────────
+with st.expander("⚙️ Settings — Language & Voice", expanded=False):
+    _col1, _col2 = st.columns(2)
+    with _col1:
+        language = st.radio("🌐 Language", ["English", "Bengali"], index=0)
+    with _col2:
+        tts_engine = st.selectbox(
+            "🔊 Voice Engine",
+            ["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"],
+            index=0 if language == "English" else 1,
+        )
     if language == "Bengali":
         bn_voice = st.selectbox(
             "🗣️ Bengali Voice",
@@ -497,32 +489,15 @@ with st.sidebar:
                 "bn-IN-BashkarNeural · Male (IN)",
             ],
             index=0,
-            help="BD = Bangladesh accent · IN = West Bengal / India accent",
         )
-        # Extract just the voice ID (first token before ·)
         bengali_voice_id = bn_voice.split(" ·")[0].strip()
     else:
         bengali_voice_id = "bn-BD-NabanitaNeural"
-
     st.markdown("""
-    <div style='height:1px;background:#e0eae4;margin:16px 0;'></div>
-    <div style='font-size:10px;color:#7aaa9a;letter-spacing:.12em;
-        text-transform:uppercase;font-weight:700;margin-bottom:8px;'>
-        Powered by</div>
-    <div style='font-size:13px;color:#3a6060;line-height:2.2;'>
-        🧠 LLaMA-4 Scout Vision<br>
-        🎙️ Groq Whisper Large v3<br>
-        🔊 ElevenLabs / edge-tts<br>
-        🌐 Deep Translator
-    </div>
-    <div style='height:1px;background:#e0eae4;margin:16px 0;'></div>
-    <div style='background:#f0faf6;border-radius:12px;padding:10px 12px;
-        border:1px solid #c8e8d8;'>
-        <div style='font-size:13px;font-weight:700;color:#1a5040;'>Raja Biswas</div>
-        <div style='font-size:11px;color:#7aaa9a;margin-top:2px;'>
-            M.Tech (AI) · Healthcare AI</div>
-    </div>
-    """, unsafe_allow_html=True)
+    <div style='font-size:12px;color:#7aaa9a;padding-top:6px;'>
+    🧠 LLaMA-4 Scout · 🎙️ Groq Whisper · 🔊 ElevenLabs/edge-tts · 
+    <strong>Raja Biswas</strong> · M.Tech (AI)
+    </div>""", unsafe_allow_html=True)
 
 
 
