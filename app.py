@@ -22,7 +22,7 @@ st.set_page_config(
     page_title="AI Healthcare Assistant",
     page_icon="🫀",
     layout="centered",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── API Keys — read AFTER set_page_config so st.secrets is available ──────────
@@ -47,19 +47,14 @@ if not GROQ_API_KEY:
 
 # ── Session state defaults ────────────────────────────────────────────────────
 defaults = {
-    "messages":        [],
-    "show_voice":      False,
-    "show_image":      False,
-    "show_camera":     False,
-    "show_sidebar":    False,
-    "language":        "English",
-    "tts_engine":      "ElevenLabs (High Quality)",
-    "bengali_voice":   "bn-BD-NabanitaNeural",
-    "input_key":       0,
-    "autoplay_b64":    None,
-    "stored_audio":    None,
-    "stored_image":    None,
-    "stored_img_name": None,
+    "messages":       [],
+    "show_voice":     False,
+    "show_image":     False,
+    "input_key":      0,
+    "autoplay_b64":   None,   # holds ONE audio to autoplay after rerun
+    "stored_audio":   None,   # persists recorded audio bytes across reruns
+    "stored_image":   None,   # persists uploaded image bytes across reruns
+    "stored_img_name": None,  # filename for display
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -68,284 +63,203 @@ for k, v in defaults.items():
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 html, body, [class*="css"] {
-    font-family: 'Inter', 'Nunito', sans-serif !important;
-    color: #1a2340 !important;
+    font-family: 'Nunito', sans-serif !important;
+    color: #e0e6f0 !important;
 }
-.stApp { background: #f0f4f8 !important; min-height: 100vh !important; }
-/* Hide top black bar */
-#MainMenu { visibility: hidden; }
-footer { visibility: hidden; }
-[data-testid="stDecoration"] { display: none !important; }
-[data-testid="stStatusWidget"] { display: none !important; }
-[data-testid="stToolbar"] { visibility: hidden !important; }
+.stApp { background: #1a1d2e !important; min-height: 100vh !important; }
+#MainMenu, footer { visibility: hidden; }
 
-/* ════ SIDEBAR TOGGLE BUTTON — make it always visible ════ */
 [data-testid="collapsedControl"] {
-    display: none !important;
+    visibility: visible !important; display: flex !important;
+    opacity: 1 !important; pointer-events: all !important;
+    z-index: 999999 !important; background: #2e3250 !important;
+    border-radius: 0 10px 10px 0 !important;
 }
-[data-testid="stSidebar"] { display: none !important; }
-/* Sidebar itself */
+[data-testid="stSidebarCollapseButton"] {
+    visibility: visible !important; pointer-events: all !important;
+}
 [data-testid="stSidebar"] {
-    background: #ffffff !important;
-    border-right: 1px solid #e0eef4 !important;
-    z-index: 999999 !important;
+    background: #1e2236 !important;
+    border-right: 1px solid rgba(255,255,255,0.06) !important;
 }
-[data-testid="stSidebar"] * { color: #2d4060 !important; }
+[data-testid="stSidebar"] * { color: #c8d0e8 !important; }
 [data-testid="stSidebarContent"] { padding: 24px 18px !important; }
 [data-testid="stRadio"] label {
-    background: #f0f7f4 !important;
-    border: 1px solid #d0e8e0 !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
-    margin: 4px 0 !important;
-    color: #2d4060 !important;
+    background: #252840 !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: 12px !important; padding: 10px 14px !important;
+    margin: 4px 0 !important; transition: background .2s !important;
 }
-[data-testid="stRadio"] label:hover { background: #d8f0e8 !important; }
+[data-testid="stRadio"] label:hover { background: #2e3258 !important; }
 [data-testid="stSelectbox"] > div > div {
-    background: #f0f7f4 !important;
-    border: 1px solid #d0e8e0 !important;
-    border-radius: 12px !important;
-    color: #2d4060 !important;
+    background: #252840 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important; color: #c8d0e8 !important;
 }
 
-/* ════ BASE BUTTON — teal/white, no dark mode hijack ════ */
+/* ── Quick action grid buttons ── */
 .stButton > button {
-    background: #ffffff !important;
-    color: #1a7a5e !important;
-    border: 1.5px solid #b8e0d0 !important;
-    border-radius: 20px !important;
-    font-weight: 600 !important;
-    font-size: 12px !important;
-    padding: 9px 8px !important;
-    width: 100% !important;
-    transition: all .18s !important;
-    line-height: 1.4 !important;
-    box-shadow: 0 2px 8px rgba(0,150,100,0.07) !important;
-    -webkit-appearance: none !important;
-    cursor: pointer !important;
+    background: #22263d !important; color: #b0bcd8 !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 14px !important; font-weight: 700 !important;
+    font-size: 12px !important; padding: 12px 6px !important;
+    width: 100% !important; transition: all .2s !important;
+    line-height: 1.5 !important;
 }
 .stButton > button:hover {
-    background: #e4f7f0 !important;
-    border-color: #2db88a !important;
-    color: #127a58 !important;
-    box-shadow: 0 4px 16px rgba(45,184,138,0.2) !important;
-    transform: translateY(-1px) !important;
-}
-/* Force light on ALL devices including mobile dark mode */
-@media (prefers-color-scheme: dark) {
-    .stButton > button {
-        background: #ffffff !important;
-        color: #1a7a5e !important;
-        border-color: #b8e0d0 !important;
-    }
+    background: #2a3060 !important; transform: translateY(-2px) !important;
+    border-color: rgba(92,111,255,0.4) !important; color: #e0e6f0 !important;
 }
 
-/* ════ TOOLBAR CIRCLE BUTTONS — teal theme, force on all devices ════ */
-.tb-col .stButton > button,
-.tb-col .stButton > button:focus,
-.tb-col .stButton > button:active {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
+/* ── Toolbar icon buttons ── */
+.toolbar-btn .stButton > button {
+    background: transparent !important;
+    border: none !important;
     border-radius: 50% !important;
-    padding: 0 !important;
-    font-size: 17px !important;
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    border: none !important;
-    color: #ffffff !important;
-    box-shadow: 0 3px 12px rgba(45,184,138,0.4) !important;
-    flex-shrink: 0 !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
+    padding: 6px !important;
+    font-size: 20px !important;
+    font-weight: 400 !important;
+    min-height: 38px !important;
+    min-width: 38px !important;
+    line-height: 1 !important;
+    color: #8899bb !important;
+    transition: color .15s, background .15s !important;
 }
-.tb-col .stButton > button:hover {
-    background: linear-gradient(135deg,#25a87d,#158060) !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 5px 18px rgba(45,184,138,0.5) !important;
-}
-.tb-col-active .stButton > button,
-.tb-col-active .stButton > button:focus {
-    background: linear-gradient(135deg,#1a9e70,#12784e) !important;
-    border: 2.5px solid #0d5c3a !important;
-    color: #ffffff !important;
-    box-shadow: 0 3px 12px rgba(45,184,138,0.5), inset 0 1px 4px rgba(0,0,0,0.15) !important;
-}
-.tb-col-send .stButton > button,
-.tb-col-send .stButton > button:focus {
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    border: none !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(45,184,138,0.5) !important;
-}
-.tb-col-clear .stButton > button,
-.tb-col-clear .stButton > button:focus {
-    background: linear-gradient(135deg,#ff7070,#e04444) !important;
-    border: none !important;
-    color: #ffffff !important;
-    box-shadow: 0 3px 12px rgba(220,60,60,0.35) !important;
-}
-/* Force override mobile dark mode for ALL toolbar buttons */
-@media (prefers-color-scheme: dark) {
-    .tb-col .stButton > button { background: linear-gradient(135deg,#2db88a,#1a9e70) !important; color: #fff !important; }
-    .tb-col-active .stButton > button { background: linear-gradient(135deg,#1a9e70,#12784e) !important; color: #fff !important; }
-    .tb-col-send .stButton > button { background: linear-gradient(135deg,#2db88a,#1a9e70) !important; color: #fff !important; }
-    .tb-col-clear .stButton > button { background: linear-gradient(135deg,#ff7070,#e04444) !important; color: #fff !important; }
+.toolbar-btn .stButton > button:hover {
+    background: rgba(255,255,255,0.07) !important;
+    transform: none !important;
+    color: #e0e6f0 !important;
 }
 
-/* ════ ANALYSE BUTTON ════ */
-.analyse-wrap .stButton > button {
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
+/* ── Pill icon style (inside pill bar) ── */
+.pill-icon .stButton > button {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 50% !important;
+    min-height: 36px !important;
+    min-width: 36px !important;
+    font-size: 18px !important;
+    color: #99aacc !important;
+}
+.pill-icon .stButton > button:hover {
+    background: rgba(255,255,255,0.12) !important;
     color: #fff !important;
-    border: none !important;
-    border-radius: 16px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    padding: 14px !important;
-    box-shadow: 0 6px 22px rgba(45,184,138,0.35) !important;
+}
+
+/* ── Active toolbar button (panel open) ── */
+.active-btn .stButton > button {
+    background: rgba(92,111,255,0.22) !important;
+    border: 1px solid rgba(92,111,255,0.5) !important;
+    border-radius: 50% !important;
+    color: #8899ff !important;
+}
+
+/* ── Send button (hidden — Enter key used instead) ── */
+.send-btn .stButton > button,
+.send-btn [data-testid="stFormSubmitButton"] > button {
+    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
+    color: #fff !important; border: none !important;
+    border-radius: 50% !important; padding: 6px !important;
+    font-size: 18px !important; font-weight: 800 !important;
+    min-height: 38px !important; min-width: 38px !important;
+    box-shadow: 0 4px 14px rgba(92,111,255,0.45) !important;
+}
+
+/* ── Analyse button ── */
+.analyse-wrap .stButton > button {
+    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
+    color: #fff !important; border: none !important;
+    border-radius: 14px !important; font-size: 14px !important;
+    font-weight: 800 !important; padding: 13px !important;
+    box-shadow: 0 6px 22px rgba(92,111,255,0.35) !important;
     letter-spacing: .02em !important;
 }
-.analyse-wrap .stButton > button:hover { transform: translateY(-1px) !important; }
 
-/* ════ FORM / TEXT INPUT ════ */
+/* ── Strip form chrome ── */
 [data-testid="stForm"] {
     border: none !important; padding: 0 !important;
     background: transparent !important; box-shadow: none !important;
 }
+
+/* ── Text input (invisible, inside card) ── */
 [data-testid="stTextInput"] input {
     background: transparent !important;
     border: none !important; outline: none !important;
-    color: #1a2340 !important;
-    padding: 10px 4px !important;
-    font-size: 14px !important;
-    -webkit-text-fill-color: #1a2340 !important;
+    color: #e0e6f0 !important;
+    padding: 10px 4px !important; font-size: 14px !important;
+    font-family: 'Nunito', sans-serif !important;
 }
-[data-testid="stTextInput"] input::placeholder { color: #9ab8c0 !important; }
+[data-testid="stTextInput"] input::placeholder { color: rgba(160,170,200,0.38) !important; }
 [data-testid="stTextInput"] > div {
     background: transparent !important; border: none !important; box-shadow: none !important;
 }
 
-/* ════ INPUT PILL ROW ════ */
-.pill-row [data-testid="stHorizontalBlock"] {
-    background: #ffffff !important;
-    border-radius: 50px !important;
-    border: 1.5px solid #c8e8de !important;
-    padding: 3px 6px 3px 16px !important;
-    box-shadow: 0 3px 16px rgba(0,120,80,0.09) !important;
-    margin-top: 8px !important;
-    align-items: center !important;
-    flex-wrap: nowrap !important;
-    gap: 2px !important;
-}
-
-/* ════ MOBILE: ALL columns stay horizontal ════ */
-[data-testid="stHorizontalBlock"] {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    gap: 4px !important;
-}
-[data-testid="stHorizontalBlock"]::-webkit-scrollbar { display: none !important; }
-[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-    flex-shrink: 0 !important;
-    min-width: 0 !important;
-}
-
-/* Quick action chips — compact on mobile */
-.qa-col .stButton > button {
-    white-space: nowrap !important;
-    padding: 8px 10px !important;
-    font-size: 11px !important;
-    border-radius: 20px !important;
-}
-@media (max-width: 480px) {
-    .qa-col .stButton > button { font-size: 10px !important; padding: 7px 6px !important; }
-    .tb-col .stButton > button,
-    .tb-col-active .stButton > button,
-    .tb-col-send .stButton > button,
-    .tb-col-clear .stButton > button {
-        width: 36px !important; height: 36px !important;
-        min-width: 36px !important; min-height: 36px !important;
-        font-size: 15px !important;
-    }
-}
-
-/* ════ AUDIO / FILE / CAMERA INPUTS ════ */
+/* ── Audio input ── */
 [data-testid="stAudioInput"] {
-    background: #f0faf6 !important;
-    border: 1.5px solid rgba(45,184,138,0.3) !important;
+    background: #1a1e38 !important;
+    border: 1px solid rgba(92,111,255,0.28) !important;
     border-radius: 14px !important;
 }
 [data-testid="stAudioInput"] button {
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
+    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
     border-radius: 50% !important;
+    box-shadow: 0 0 0 8px rgba(92,111,255,0.12) !important;
 }
+
+/* ── File uploader ── */
 [data-testid="stFileUploader"] section {
-    background: #f0faf6 !important;
-    border: 2px dashed rgba(45,184,138,0.4) !important;
-    border-radius: 14px !important;
+    background: #1a1e38 !important;
+    border: 2px dashed rgba(56,182,255,0.35) !important;
+    border-radius: 14px !important; cursor: pointer !important;
+    transition: all .2s !important;
 }
 [data-testid="stFileUploader"] section:hover {
-    border-color: #2db88a !important; background: #e4f7f0 !important;
+    border-color: rgba(56,182,255,0.75) !important; background: #1e2344 !important;
 }
 [data-testid="stFileUploaderDropzoneInstructions"] span {
-    color: #2db88a !important; font-weight: 700 !important;
-}
-[data-testid="stCameraInput"] {
-    background: #f0faf6 !important;
-    border: 1.5px solid rgba(45,184,138,0.3) !important;
-    border-radius: 16px !important; overflow: hidden !important;
-}
-[data-testid="stCameraInput"] button {
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    color: #fff !important; border-radius: 10px !important; border: none !important;
+    color: #38b6ff !important; font-size: 13px !important; font-weight: 700 !important;
 }
 
-/* ════ CHAT BOX CONTAINER ════ */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff !important;
-    border: 1.5px solid #d0eee8 !important;
-    border-radius: 20px !important;
-    padding: 10px 8px !important;
-    box-shadow: 0 4px 24px rgba(0,100,80,0.07) !important;
-}
-
+/* ── Audio players ── */
 audio {
     width: 100% !important; border-radius: 10px !important;
     margin-top: 3px !important; height: 36px !important;
+    filter: invert(0) !important;
 }
-[data-testid="stImage"] img {
-    max-height: 200px !important; border-radius: 14px !important;
-    box-shadow: 0 4px 20px rgba(0,80,60,0.12) !important;
-}
-[data-testid="stAlert"] {
-    background: #f0faf6 !important; border: 1px solid #b8e8d8 !important;
-    border-radius: 12px !important; color: #1a5040 !important;
-}
-hr { border-color: #e0eae4 !important; }
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #b8d8cc; border-radius: 4px; }
-.block-container { max-width: 700px !important; padding: 12px 10px 80px !important; margin: 0 auto !important; }
-[data-testid="stSpinner"] p { color: #2db88a !important; }
 
-/* ════ EXPANDER (settings) ════ */
-[data-testid="stExpander"] {
-    background: #ffffff !important;
-    border: 1.5px solid #c8e8dc !important;
-    border-radius: 16px !important;
-    box-shadow: 0 2px 12px rgba(45,184,138,0.08) !important;
-    margin-bottom: 12px !important;
+/* ── Image preview ── */
+[data-testid="stImage"] img {
+    max-height: 200px !important; max-width: 100% !important;
+    width: auto !important; border-radius: 14px !important;
+    object-fit: contain !important; display: block !important; margin: 4px auto !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
 }
-[data-testid="stExpander"] summary {
-    color: #1a7a5e !important;
-    font-weight: 700 !important;
-    font-size: 14px !important;
+
+/* ── Alerts ── */
+[data-testid="stAlert"] {
+    background: #1e2138 !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: 12px !important; color: #c8d0e8 !important;
 }
-[data-testid="stExpander"] summary:hover { color: #2db88a !important; }
+
+hr { border-color: rgba(255,255,255,0.05) !important; }
+[data-testid="stCaptionContainer"] p { color: rgba(160,175,210,0.45) !important; font-size: 11px !important; }
+/* ── Chat window container ── */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(180deg,#12152a 0%,#161929 100%) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 18px !important;
+    padding: 10px 6px !important;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2e50; border-radius: 4px; }
+.block-container { max-width: 700px !important; padding: 20px 16px 60px !important; margin: 0 auto !important; }
+[data-testid="stSpinner"] p { color: #8899ff !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -362,21 +276,21 @@ def user_bubble(text, voice_b64=None, ts=None):
     <div style='display:flex;justify-content:flex-end;align-items:flex-end;
         gap:8px;margin:10px 0 2px;padding:0 2px;'>
         <div style='max-width:75%;'>
-            <div style='background:linear-gradient(135deg,#2db88a,#1a9e70);
+            <div style='background:linear-gradient(135deg,#4f5fff 0%,#3ab0ff 100%);
                 color:#fff;border-radius:18px 18px 4px 18px;
-                padding:11px 15px;font-size:14px;line-height:1.65;
-                box-shadow:0 2px 12px rgba(45,184,138,0.25);word-wrap:break-word;'>
+                padding:10px 14px;font-size:14px;line-height:1.65;
+                box-shadow:0 2px 12px rgba(79,95,255,0.35);word-wrap:break-word;'>
                 {text}
             </div>
-            <div style='font-size:10px;color:#a0b8c0;text-align:right;
-                margin-top:3px;padding-right:4px;'>
+            <div style='font-size:10px;color:rgba(140,155,200,0.45);text-align:right;
+                margin-top:3px;padding-right:4px;font-family:JetBrains Mono,monospace;'>
                 {time_str} ✓✓
             </div>
         </div>
         <div style='width:32px;height:32px;border-radius:50%;
-            background:linear-gradient(135deg,#2db88a,#1a9e70);
+            background:linear-gradient(135deg,#4f5fff,#3ab0ff);
             display:flex;align-items:center;justify-content:center;
-            font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(45,184,138,0.3);'>
+            font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(79,95,255,0.3);'>
             👤
         </div>
     </div>
@@ -384,9 +298,10 @@ def user_bubble(text, voice_b64=None, ts=None):
     if voice_b64:
         st.markdown(
             f"<div style='display:flex;justify-content:flex-end;margin:0 40px 8px 0;'>"
-            f"<div style='width:72%;background:rgba(45,184,138,0.08);border-radius:10px;"
-            f"padding:6px 8px;border:1px solid rgba(45,184,138,0.2);'>"
-            f"<div style='font-size:9px;color:#2db88a;margin-bottom:3px;font-weight:600;'>🎤 YOUR VOICE</div>"
+            f"<div style='width:72%;background:rgba(79,95,255,0.12);border-radius:10px;"
+            f"padding:6px 8px;border:1px solid rgba(79,95,255,0.2);'>"
+            f"<div style='font-size:9px;color:rgba(140,160,255,0.55);margin-bottom:3px;"
+            f"font-family:JetBrains Mono,monospace;letter-spacing:.1em;'>🎤 YOUR VOICE</div>"
             f"<audio controls style='width:100%;height:32px;border-radius:8px;'>"
             f"<source src='data:audio/mp3;base64,{voice_b64}' type='audio/mp3'></audio>"
             f"</div></div>",
@@ -394,42 +309,47 @@ def user_bubble(text, voice_b64=None, ts=None):
         )
 
 def ai_bubble(text, is_medical=False, audio_b64=None, ts=None, do_autoplay=False):
-    icon  = "🩺" if is_medical else "🤖"
-    label = "Dr. AI" if is_medical else "AI Assistant"
+    border = "rgba(56,182,255,0.2)" if is_medical else "rgba(255,255,255,0.06)"
+    glow   = "rgba(56,182,255,0.08)" if is_medical else "rgba(255,255,255,0.02)"
+    icon   = "🩺" if is_medical else "🫀"
+    label  = "Dr. AI" if is_medical else "AI Assistant"
     time_str = ts or ""
     st.markdown(f"""
     <div style='display:flex;justify-content:flex-start;align-items:flex-end;
         gap:8px;margin:10px 0 2px;padding:0 2px;'>
-        <div style='width:34px;height:34px;border-radius:50%;
-            background:linear-gradient(135deg,#e8f5f0,#d0ede4);
-            border:1.5px solid #b8e0d0;
+        <div style='width:32px;height:32px;border-radius:50%;
+            background:#1e2240;border:1px solid {border};
             display:flex;align-items:center;justify-content:center;
-            font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,120,80,0.1);'>
+            font-size:15px;flex-shrink:0;'>
             {icon}
         </div>
         <div style='max-width:75%;'>
-            <div style='font-size:10px;color:#7aaa9a;margin-bottom:4px;font-weight:600;
-                letter-spacing:.04em;'>{label}</div>
-            <div style='background:#ffffff;border:1.5px solid #e0eef8;
-                color:#1a2340;border-radius:4px 18px 18px 18px;
-                padding:11px 15px;font-size:14px;line-height:1.65;
-                box-shadow:0 2px 12px rgba(0,80,120,0.07);word-wrap:break-word;'>
+            <div style='font-size:10px;color:rgba(140,160,200,0.5);
+                margin-bottom:4px;font-family:JetBrains Mono,monospace;
+                letter-spacing:.08em;'>{label}</div>
+            <div style='background:#1e2240;border:1px solid {border};
+                background:linear-gradient(135deg,#1e2240,#1a1e38);
+                color:#d8e0f0;border-radius:4px 18px 18px 18px;
+                padding:10px 14px;font-size:14px;line-height:1.65;
+                box-shadow:0 2px 12px rgba(0,0,0,0.25);word-wrap:break-word;'>
                 {text}
             </div>
-            <div style='font-size:10px;color:#a0b8c0;margin-top:3px;padding-left:4px;'>
+            <div style='font-size:10px;color:rgba(140,155,200,0.4);
+                margin-top:3px;padding-left:4px;font-family:JetBrains Mono,monospace;'>
                 {time_str}
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     if audio_b64:
-        _ap = "autoplay" if do_autoplay else ""
+        _autoplay_attr = "autoplay" if do_autoplay else ""
         st.markdown(
-            f"<div style='display:flex;justify-content:flex-start;margin:0 0 8px 42px;'>"
-            f"<div style='width:72%;background:#f0faf6;border-radius:10px;"
-            f"padding:6px 8px;border:1px solid #b8e8d0;'>"
-            f"<div style='font-size:9px;color:#2db88a;margin-bottom:3px;font-weight:600;'>🔊 DOCTOR RESPONSE</div>"
-            f"<audio {_ap} controls style='width:100%;height:32px;border-radius:8px;'>"
+            f"<div style='display:flex;justify-content:flex-start;margin:0 0 8px 40px;'>"
+            f"<div style='width:72%;background:rgba(56,182,255,0.08);border-radius:10px;"
+            f"padding:6px 8px;border:1px solid rgba(56,182,255,0.18);'>"
+            f"<div style='font-size:9px;color:rgba(56,182,255,0.55);margin-bottom:3px;"
+            f"font-family:JetBrains Mono,monospace;letter-spacing:.1em;'>🔊 DOCTOR RESPONSE</div>"
+            f"<audio {_autoplay_attr} controls style='width:100%;height:32px;border-radius:8px;'>"
             f"<source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>"
             f"</div></div>",
             unsafe_allow_html=True,
@@ -437,22 +357,23 @@ def ai_bubble(text, is_medical=False, audio_b64=None, ts=None, do_autoplay=False
 
 def image_bubble(img_b64):
     st.markdown(f"""
-    <div style='display:flex;justify-content:flex-end;margin:4px 42px 4px 0;'>
+    <div style='display:flex;justify-content:flex-end;margin:4px 40px 4px 0;'>
         <img src='data:image/jpeg;base64,{img_b64}'
-            style='max-height:180px;max-width:65%;border-radius:16px;
-            box-shadow:0 4px 20px rgba(0,80,60,0.15);object-fit:cover;
-            border:2px solid #d0ede4;'/>
+            style='max-height:180px;max-width:65%;border-radius:14px;
+            box-shadow:0 4px 20px rgba(0,0,0,0.4);object-fit:cover;
+            border:1px solid rgba(255,255,255,0.08);'/>
     </div>
     """, unsafe_allow_html=True)
 
 def day_divider(label="Today"):
     st.markdown(f"""
     <div style='display:flex;align-items:center;gap:10px;margin:14px 0 8px;'>
-        <div style='flex:1;height:1px;background:#e0eae4;'></div>
-        <div style='font-size:10px;color:#7aaa9a;font-weight:600;
-            background:#f0faf6;padding:2px 12px;border-radius:20px;
-            border:1px solid #c8e8d8;'>{label}</div>
-        <div style='flex:1;height:1px;background:#e0eae4;'></div>
+        <div style='flex:1;height:1px;background:rgba(255,255,255,0.06);'></div>
+        <div style='font-size:10px;color:rgba(140,155,200,0.4);
+            font-family:JetBrains Mono,monospace;letter-spacing:.12em;
+            background:#1a1d2e;padding:2px 10px;border-radius:20px;
+            border:1px solid rgba(255,255,255,0.06);'>{label}</div>
+        <div style='flex:1;height:1px;background:rgba(255,255,255,0.06);'></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -472,190 +393,99 @@ CHAT_PROMPT = (
 )
 
 
-# ── Custom sidebar panel — toggle with ☰ button ──────────────────────────────
-# Floating ☰ toggle button (always visible, teal, left edge)
-st.markdown("""
-<style>
-.sidebar-toggle-wrap {
-    position: fixed !important;
-    left: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 999999 !important;
-}
-.sidebar-toggle-wrap .stButton > button {
-    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 0 16px 16px 0 !important;
-    padding: 18px 10px !important;
-    font-size: 20px !important;
-    min-height: 60px !important;
-    min-width: 36px !important;
-    width: 36px !important;
-    box-shadow: 4px 0 16px rgba(45,184,138,0.45) !important;
-    line-height: 1 !important;
-    font-weight: 400 !important;
-}
-.sidebar-toggle-wrap .stButton > button:hover {
-    background: linear-gradient(135deg,#25a87d,#158060) !important;
-    transform: none !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("<div class='sidebar-toggle-wrap'>", unsafe_allow_html=True)
-if st.button("☰", key="sidebar_toggle_btn"):
-    st.session_state.show_sidebar = not st.session_state.show_sidebar
-    st.rerun()
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Custom sidebar panel — slides in from left when show_sidebar=True
-if st.session_state.show_sidebar:
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+with st.sidebar:
     st.markdown("""
-    <style>
-    .custom-sidebar {
-        position: fixed !important;
-        top: 0 !important; left: 0 !important;
-        width: 280px !important;
-        height: 100vh !important;
-        background: #ffffff !important;
-        border-right: 2px solid #d0ede4 !important;
-        box-shadow: 6px 0 32px rgba(0,100,80,0.15) !important;
-        z-index: 99999 !important;
-        overflow-y: auto !important;
-        padding: 0 0 40px 0 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    with st.container():
-        st.markdown("""
-        <div class='custom-sidebar'>
-        <div style='background:linear-gradient(135deg,#2db88a,#1a9e70);
-            padding:24px 20px 20px;'>
-            <div style='font-size:32px;text-align:center;margin-bottom:8px;'>🩺</div>
-            <div style='font-size:16px;font-weight:800;color:#fff;text-align:center;'>
-                AI Healthcare</div>
-            <div style='font-size:11px;color:rgba(255,255,255,0.75);text-align:center;
-                margin-top:4px;'>v2.0 · M.Tech AI · Raja Biswas</div>
-        </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Settings inside a white card below
-    st.markdown("""
-    <div style='position:fixed;top:140px;left:0;width:280px;
-        z-index:99999;padding:0 16px;box-sizing:border-box;'>
+    <div style='text-align:center;padding:4px 0 16px;'>
+        <div style='font-size:44px;margin-bottom:8px;'>🫀</div>
+        <div style='font-family:Nunito,sans-serif;font-size:15px;font-weight:800;
+            color:#c8d0e8;'>AI Healthcare Assistant</div>
+        <div style='font-size:10px;color:rgba(160,175,210,0.4);margin-top:5px;
+            font-family:JetBrains Mono,monospace;letter-spacing:.1em;'>
+            v2.0 · M.Tech AI</div>
     </div>
+    <div style='height:1px;background:rgba(255,255,255,0.06);margin-bottom:18px;'></div>
     """, unsafe_allow_html=True)
 
-    # Actual Streamlit widgets rendered in a box
-    with st.container():
-        st.markdown("""
-        <div style='background:#ffffff;border:1.5px solid #d0ede4;
-            border-radius:16px;padding:16px;margin-bottom:12px;
-            box-shadow:0 2px 12px rgba(45,184,138,0.08);'>
-            <div style='font-size:11px;color:#7aaa9a;font-weight:700;
-                letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;'>
-            ⚙️ Settings</div>
-        </div>
-        """, unsafe_allow_html=True)
+    language   = st.radio("🌐 Language / ভাষা", ["English", "Bengali"], index=0)
+    tts_engine = st.selectbox(
+        "🔊 Voice Engine",
+        ["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"],
+        index=0 if language == "English" else 1,
+    )
 
-        language = st.radio(
-            "🌐 Language / ভাষা",
-            ["English", "Bengali"],
-            index=0 if st.session_state.language == "English" else 1,
-            key="lang_radio",
-        )
-        st.session_state.language = language
-
-        tts_engine = st.selectbox(
-            "🔊 Voice Engine",
-            ["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"],
-            index=["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"].index(
-                st.session_state.tts_engine
-            ),
-            key="tts_select",
-        )
-        st.session_state.tts_engine = tts_engine
-
-        if language == "Bengali":
-            _voices = [
+    if language == "Bengali":
+        bn_voice = st.selectbox(
+            "🗣️ Bengali Voice",
+            [
                 "bn-BD-NabanitaNeural · Female (BD)",
                 "bn-BD-PradeepNeural · Male (BD)",
                 "bn-IN-TanishaaNeural · Female (IN)",
                 "bn-IN-BashkarNeural · Male (IN)",
-            ]
-            bn_voice = st.selectbox("🗣️ Bengali Voice", _voices, index=0, key="bn_voice_select")
-            bengali_voice_id = bn_voice.split(" ·")[0].strip()
-            st.session_state.bengali_voice = bengali_voice_id
-        else:
-            bengali_voice_id = st.session_state.bengali_voice
+            ],
+            index=0,
+            help="BD = Bangladesh accent · IN = West Bengal / India accent",
+        )
+        # Extract just the voice ID (first token before ·)
+        bengali_voice_id = bn_voice.split(" ·")[0].strip()
+    else:
+        bengali_voice_id = "bn-BD-NabanitaNeural"
 
-        st.markdown("""
-        <div style='height:1px;background:#e0eae4;margin:14px 0;'></div>
-        <div style='font-size:12px;color:#5a8a7a;line-height:2;'>
-            🧠 LLaMA-4 Scout Vision<br>
-            🎙️ Groq Whisper Large v3<br>
-            🔊 ElevenLabs / edge-tts / gTTS<br>
-            🌐 Deep Translator
-        </div>
-        <div style='height:1px;background:#e0eae4;margin:14px 0;'></div>
-        <div style='background:#f0faf6;border-radius:12px;padding:10px 12px;
-            border:1px solid #c8e8d8;'>
-            <div style='font-size:13px;font-weight:700;color:#1a5040;'>Raja Biswas</div>
-            <div style='font-size:11px;color:#7aaa9a;'>M.Tech (AI) · Healthcare AI</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-        if st.button("✕  Close Settings", key="close_sidebar_btn", use_container_width=True):
-            st.session_state.show_sidebar = False
-            st.rerun()
-
-else:
-    # Use persisted values when sidebar is closed
-    language         = st.session_state.language
-    tts_engine       = st.session_state.tts_engine
-    bengali_voice_id = st.session_state.bengali_voice
+    st.markdown("""
+    <div style='height:1px;background:rgba(255,255,255,0.06);margin:16px 0;'></div>
+    <div style='font-size:11px;color:rgba(160,175,210,0.4);letter-spacing:.12em;
+        text-transform:uppercase;font-family:JetBrains Mono,monospace;margin-bottom:8px;'>
+        Powered by</div>
+    <div style='font-size:13px;color:#a0aac8;line-height:2.1;'>
+        🧠 LLaMA-4 Scout Vision<br>
+        🎙️ Groq Whisper Large v3<br>
+        🔊 ElevenLabs / edge-tts / gTTS<br>
+        🌐 Deep Translator
+    </div>
+    <div style='height:1px;background:rgba(255,255,255,0.06);margin:16px 0;'></div>
+    <div style='font-size:12px;color:rgba(160,175,210,0.45);line-height:1.8;'>
+        <strong style='color:#c8d0e8;'>Raja Biswas</strong><br>
+        M.Tech (AI) · Clinical Decision Support System
+    </div>
+    """, unsafe_allow_html=True)
 
 
 
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='text-align:center;padding:24px 0 18px;'>
-    <div style='display:inline-flex;align-items:center;justify-content:center;
-        width:72px;height:72px;border-radius:50%;
-        background:linear-gradient(135deg,#2db88a,#1a9e70);
-        font-size:34px;margin-bottom:14px;
-        box-shadow:0 6px 24px rgba(45,184,138,0.35);'>🩺</div>
-    <div style='font-size:clamp(18px,4vw,26px);font-weight:800;
-        color:#1a2340;margin-bottom:4px;letter-spacing:-.02em;'>
+<div style='text-align:center;padding:18px 0 14px;'>
+    <div style='font-size:58px;margin-bottom:10px;
+        filter:drop-shadow(0 0 24px rgba(92,111,255,0.6));'>🫀</div>
+    <div style='font-family:Nunito,sans-serif;font-size:clamp(17px,4vw,24px);
+        font-weight:800;color:#e0e6f0;margin-bottom:3px;'>
         AI Based Conversational Assistant
     </div>
-    <div style='font-size:clamp(13px,3vw,17px);font-weight:700;
-        color:#2db88a;margin-bottom:12px;'>
+    <div style='font-family:Nunito,sans-serif;font-size:clamp(13px,3vw,17px);
+        font-weight:700;color:#5c6fff;margin-bottom:12px;'>
         For Healthcare and Support
     </div>
-    <div style='margin:8px 0 16px;'>
-        <div style='font-size:15px;font-weight:700;color:#1a5040;'>Raja Biswas</div>
-        <div style='font-size:11px;color:#7aaa9a;font-weight:600;
-            letter-spacing:.1em;text-transform:uppercase;margin-top:3px;'>
+    <div style='margin:6px 0 14px;'>
+        <div style='font-family:Nunito,sans-serif;font-size:15px;
+            font-weight:800;color:#c8d0e8;letter-spacing:.02em;'>
+            Raja Biswas
+        </div>
+        <div style='font-family:JetBrains Mono,monospace;font-size:11px;
+            color:rgba(140,160,220,0.5);letter-spacing:.12em;
+            text-transform:uppercase;margin-top:3px;'>
             M.Tech · Artificial Intelligence
         </div>
     </div>
     <div style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
-        <span style='background:#e8f5f0;border:1.5px solid #b8e0d0;
-            color:#1a7a5e;font-size:11px;padding:4px 14px;border-radius:20px;
-            font-weight:700;'>● LIVE</span>
-        <span style='background:#e8f0ff;border:1.5px solid #c0d0ff;
-            color:#3a5acc;font-size:11px;padding:4px 14px;border-radius:20px;
-            font-weight:700;'>Vision + Voice</span>
-        <span style='background:#fff0f0;border:1.5px solid #ffc0c0;
-            color:#cc4444;font-size:11px;padding:4px 14px;border-radius:20px;
-            font-weight:700;'>Educational Only</span>
+        <span style='background:#252840;border:1px solid rgba(92,111,255,0.25);
+            color:#8899ff;font-size:11px;padding:3px 12px;border-radius:20px;
+            font-family:JetBrains Mono,monospace;'>● LIVE</span>
+        <span style='background:#252840;border:1px solid rgba(56,182,255,0.2);
+            color:#38b6ff;font-size:11px;padding:3px 12px;border-radius:20px;
+            font-family:JetBrains Mono,monospace;'>Vision + Voice</span>
+        <span style='background:#252840;border:1px solid rgba(255,100,100,0.18);
+            color:#ff8080;font-size:11px;padding:3px 12px;border-radius:20px;
+            font-family:JetBrains Mono,monospace;'>Educational Only</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -663,35 +493,52 @@ st.markdown("""
 
 # ── Quick actions ─────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='font-size:11px;color:#7aaa9a;letter-spacing:.14em;
-    text-transform:uppercase;font-weight:700;
+<div style='font-size:10px;color:rgba(160,175,210,0.38);letter-spacing:.14em;
+    text-transform:uppercase;font-family:JetBrains Mono,monospace;
     margin:4px 0 10px;text-align:center;'>Quick Actions</div>
 """, unsafe_allow_html=True)
 
-# Quick actions — horizontal scrollable chips
-_qa_labels = ["🎤 Voice","🖼️ Image","🩺 Skin","🫁 X-Ray","🌐 বাংলা","💊 Ask"]
-_qcols = st.columns(6, gap="small")
-for _i, _col in enumerate(_qcols):
-    with _col:
-        st.markdown("<div class='qa-col'>", unsafe_allow_html=True)
-        _clicked = st.button(_qa_labels[_i], key=f"qa_{_i}")
-        st.markdown("</div>", unsafe_allow_html=True)
-        if _clicked:
-            if _i == 0: st.session_state.show_voice = True
-            elif _i == 1: st.session_state.show_image = True
-            elif _i == 2: st.session_state.show_voice = True; st.session_state.show_image = True
-            elif _i == 3: st.session_state.show_image = True
-            elif _i == 4: st.session_state.show_voice = True
-            st.rerun()
+c1,c2,c3,c4,c5,c6 = st.columns(6)
+with c1:
+    if st.button("🎤\nVoice"):
+        st.session_state.show_voice = True; st.rerun()
+with c2:
+    if st.button("🖼️\nImage"):
+        st.session_state.show_image = True; st.rerun()
+with c3:
+    if st.button("🩺\nSkin"):
+        st.session_state.show_voice = True
+        st.session_state.show_image = True; st.rerun()
+with c4:
+    if st.button("🫁\nX-Ray"):
+        st.session_state.show_image = True; st.rerun()
+with c5:
+    if st.button("🌐\nবাংলা"):
+        st.session_state.show_voice = True; st.rerun()
+with c6:
+    if st.button("💊\nAsk"):
+        pass
 
-st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ── CHAT WINDOW ──────────────────────────────════════════════════════════════
 # ══════════════════════════════════════════════════════════════════════════════
 
-st.markdown('<div class="chat-anchor" style="display:none"></div>', unsafe_allow_html=True)
+# Style the chat container via CSS targeting the next sibling block
+st.markdown("""
+<style>
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stVerticalBlock"] > div > div[data-testid="stMarkdownContainer"] > div.chat-anchor) {
+    background: linear-gradient(180deg,#12152a 0%,#161929 100%) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 18px !important;
+    padding: 14px !important;
+    min-height: 300px !important;
+}
+</style>
+<div class="chat-anchor" style="display:none"></div>
+""", unsafe_allow_html=True)
 
 with st.container():
     if st.session_state.messages:
@@ -743,10 +590,10 @@ if st.session_state.autoplay_b64:
 # ── Voice panel ───────────────────────────────────────────────────────────────
 if st.session_state.show_voice:
     st.markdown("""
-    <div style='background:#f0faf6;border-radius:16px;padding:12px 16px 8px;
-        border:1.5px solid rgba(45,184,138,0.35);margin-bottom:8px;
-        box-shadow:0 4px 20px rgba(45,184,138,0.12);'>
-        <div style='font-size:10px;color:#2db88a;letter-spacing:.15em;
+    <div style='background:#1e2240;border-radius:16px;padding:12px 16px 8px;
+        border:1px solid rgba(92,111,255,0.35);margin-bottom:8px;
+        box-shadow:0 8px 32px rgba(92,111,255,0.2);'>
+        <div style='font-size:10px;color:#8899ff;letter-spacing:.15em;
             text-transform:uppercase;font-family:JetBrains Mono,monospace;
             margin-bottom:6px;'>🎤 Tap the mic below to start recording</div>
     </div>
@@ -761,7 +608,7 @@ if st.session_state.show_voice:
         _raw_audio.seek(0)  # reset so it can be read again later
     if st.session_state.stored_audio:
         st.markdown(
-            "<div style='font-size:12px;color:#1a9e70;font-weight:600;padding:4px 2px 6px;'>"
+            "<div style='font-size:12px;color:#22c55e;padding:4px 2px 6px;'>"
             "✓ Voice captured — tap 🔬 Analyse Now</div>",
             unsafe_allow_html=True,
         )
@@ -778,10 +625,10 @@ if st.session_state.show_voice and st.session_state.stored_audio:
 # ── Image panel ───────────────────────────────────────────────────────────────
 if st.session_state.show_image:
     st.markdown("""
-    <div style='background:#f0faf6;border-radius:16px;padding:12px 16px 8px;
-        border:1.5px solid rgba(45,184,138,0.3);margin-bottom:8px;
-        box-shadow:0 4px 20px rgba(45,184,138,0.12);'>
-        <div style='font-size:10px;color:#2db88a;letter-spacing:.15em;
+    <div style='background:#1e2240;border-radius:16px;padding:12px 16px 8px;
+        border:1px solid rgba(56,182,255,0.3);margin-bottom:8px;
+        box-shadow:0 8px 32px rgba(56,182,255,0.15);'>
+        <div style='font-size:10px;color:#38b6ff;letter-spacing:.15em;
             text-transform:uppercase;font-family:JetBrains Mono,monospace;
             margin-bottom:6px;'>🖼️ Click below to select your medical image</div>
     </div>
@@ -801,126 +648,113 @@ if st.session_state.show_image:
         st.image(io.BytesIO(st.session_state.stored_image), width=220,
                  caption=f"✓ {st.session_state.stored_img_name} — tap 🔬 Analyse Now")
 
-# ── Camera panel ─────────────────────────────────────────────────────────────
-if st.session_state.show_camera:
-    st.markdown("""
-    <div style='background:#f0faf6;border-radius:16px;padding:12px 16px 8px;
-        border:1.5px solid rgba(45,184,138,0.3);margin-bottom:8px;
-        box-shadow:0 8px 32px rgba(56,255,180,0.12);'>
-        <div style='font-size:10px;color:#2db88a;letter-spacing:.15em;
-            text-transform:uppercase;font-family:JetBrains Mono,monospace;
-            margin-bottom:6px;'>📷 Point camera at the affected area</div>
-    </div>
-    """, unsafe_allow_html=True)
-    _raw_camera = st.camera_input(
-        label="Take photo",
-        label_visibility="collapsed",
-        key="camera_input",
-    )
-    if _raw_camera is not None:
-        st.session_state.stored_image    = _raw_camera.read()
-        st.session_state.stored_img_name = "camera_capture.jpg"
-        st.session_state.show_camera     = False   # close after capture
-        st.session_state.show_image      = False
-        st.rerun()
-
-# Expose image_file from stored bytes (upload OR camera)
+# Expose image_file from stored bytes
 image_file = None
 if st.session_state.stored_image:
     image_file = io.BytesIO(st.session_state.stored_image)
 
-# Show preview if image captured
-if st.session_state.stored_image and not st.session_state.show_image:
-    st.image(io.BytesIO(st.session_state.stored_image), width=220,
-             caption=f"✓ {st.session_state.stored_img_name or 'Image ready'} — tap 🔬 Analyse Now")
+# ── Pill input bar — layout: [ text ... ] [ 🖼️ ] [ 🎤 ] [ 🗑️ ] ────────────────
+# Uses a 3-col layout: wide text col | icon col (img+mic) | clear col
+txt_col, icons_col, clr_col = st.columns([8, 2, 1], gap="small")
 
-# ── Input bar — pill row with all controls horizontal ────────────────────────
 mic_active = st.session_state.show_voice
 img_active = st.session_state.show_image
-cam_active = st.session_state.show_camera
 
-st.markdown("<div class='pill-row'>", unsafe_allow_html=True)
-_c_txt, _c_img, _c_cam, _c_mic, _c_snd, _c_clr = st.columns([6,1,1,1,1,1], gap="small")
+# Pill wrapper — visually surrounds text + icons together
+st.markdown(f"""
+<style>
+/* Make the 3 cols sit flush inside a pill */
+div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {{
+    background: #22263d;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.09);
+    padding: 2px 6px 2px 18px;
+    align-items: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    margin-top: 6px;
+}}
+</style>
+<span id='pill-anchor' style='display:none'></span>
+""", unsafe_allow_html=True)
 
-with _c_txt:
+with txt_col:
     with st.form(key="chat_form", clear_on_submit=True):
-        text_query = st.text_input(
-            label="msg", placeholder="Ask me anything...",
-            label_visibility="collapsed",
-            key=f"chat_input_{st.session_state.input_key}",
-        )
-        st.markdown("<div style='display:none'>", unsafe_allow_html=True)
-        send_clicked = st.form_submit_button("➤")
+        f1, f2 = st.columns([10, 1], gap="small")
+        with f1:
+            text_query = st.text_input(
+                label="msg",
+                placeholder="Ask me anything...",
+                label_visibility="collapsed",
+                key=f"chat_input_{st.session_state.input_key}",
+            )
+        with f2:
+            # Hidden send — Enter key triggers it; we hide the button visually
+            st.markdown("<div style='display:none'>", unsafe_allow_html=True)
+            send_clicked = st.form_submit_button("➤")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+with icons_col:
+    ic1, ic2 = st.columns(2, gap="small")
+    with ic1:
+        img_class = "active-btn toolbar-btn" if img_active else "toolbar-btn pill-icon"
+        st.markdown(f"<div class='{img_class}'>", unsafe_allow_html=True)
+        if st.button("⊞", help="Upload image", key="img_btn"):
+            st.session_state.show_image = not st.session_state.show_image
+            if st.session_state.show_image:
+                st.session_state.show_voice = False
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+    with ic2:
+        mic_class = "active-btn toolbar-btn" if mic_active else "toolbar-btn pill-icon"
+        st.markdown(f"<div class='{mic_class}'>", unsafe_allow_html=True)
+        if st.button("🎙", help="Record voice", key="mic_btn"):
+            st.session_state.show_voice = not st.session_state.show_voice
+            if st.session_state.show_voice:
+                st.session_state.show_image = False
+            st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-with _c_img:
-    _cls = "tb-col-active" if img_active else "tb-col"
-    st.markdown(f"<div class='{_cls}'>", unsafe_allow_html=True)
-    if st.button("📎", help="Upload image", key="img_btn"):
-        st.session_state.show_image  = not img_active
-        st.session_state.show_camera = False
-        if st.session_state.show_image: st.session_state.show_voice = False
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with _c_cam:
-    _cls = "tb-col-active" if cam_active else "tb-col"
-    st.markdown(f"<div class='{_cls}'>", unsafe_allow_html=True)
-    if st.button("📷", help="Take photo", key="cam_btn"):
-        st.session_state.show_camera = not cam_active
-        st.session_state.show_image  = False
-        st.session_state.show_voice  = False
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with _c_mic:
-    _cls = "tb-col-active" if mic_active else "tb-col"
-    st.markdown(f"<div class='{_cls}'>", unsafe_allow_html=True)
-    if st.button("🎙", help="Record voice", key="mic_btn"):
-        st.session_state.show_voice  = not mic_active
-        st.session_state.show_camera = False
-        if st.session_state.show_voice: st.session_state.show_image = False
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with _c_snd:
-    st.markdown("<div class='tb-col-send'>", unsafe_allow_html=True)
-    if st.button("➤", help="Send", key="send_icon_btn"):
-        st.session_state["_send_trigger"] = True
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with _c_clr:
-    st.markdown("<div class='tb-col-clear'>", unsafe_allow_html=True)
+with clr_col:
+    st.markdown("<div class='toolbar-btn'>", unsafe_allow_html=True)
     if st.button("🗑", help="Clear chat", key="clear_btn"):
-        for _k in ["messages","autoplay_b64","stored_audio","stored_image","stored_img_name"]:
-            st.session_state[_k] = [] if _k == "messages" else None
-        st.session_state.show_voice  = False
-        st.session_state.show_image  = False
-        st.session_state.show_camera = False
-        st.session_state.input_key  += 1
+        st.session_state.messages        = []
+        st.session_state.autoplay_b64    = None
+        st.session_state.stored_audio    = None
+        st.session_state.stored_image    = None
+        st.session_state.stored_img_name = None
+        st.session_state.show_voice      = False
+        st.session_state.show_image      = False
+        st.session_state.input_key      += 1
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("</div>", unsafe_allow_html=True)  # end pill-row
+# ── Hint when panels are open ─────────────────────────────────────────────────
+if st.session_state.show_voice or st.session_state.show_image:
+    st.markdown("""
+    <div style='font-size:10px;color:rgba(140,160,255,0.4);text-align:center;
+        font-family:JetBrains Mono,monospace;letter-spacing:.1em;
+        text-transform:uppercase;margin:4px 0 2px;'>
+        ↑ ready · tap 🔬 Analyse to process
+    </div>
+    """, unsafe_allow_html=True)
 
-# ── Analyse button — shown directly below input bar when image/voice ready ────
-_has_media = (st.session_state.show_voice or st.session_state.stored_image
-              or st.session_state.show_image)
-if _has_media:
-    st.markdown("<div class='analyse-wrap' style='margin-top:8px;'>", unsafe_allow_html=True)
-    analyse_clicked = st.button("🔬  Analyse Now", use_container_width=True, key="analyse_btn")
+# ── Analyse button (only when voice or image panel is open) ──────────────────
+if st.session_state.show_voice or st.session_state.show_image:
+    st.markdown("<div class='analyse-wrap' style='margin-top:4px;'>",
+                unsafe_allow_html=True)
+    analyse_clicked = st.button(
+        "🔬  Analyse Now",
+        use_container_width=True,
+        key="analyse_btn",
+    )
     st.markdown("</div>", unsafe_allow_html=True)
 else:
     analyse_clicked = False
 
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ── TEXT CHAT PIPELINE ────────────────────────────────────────────────────────
 # ══════════════════════════════════════════════════════════════════════════════
-# Also handle send button icon click
-if st.session_state.get("_send_trigger"):
-    st.session_state["_send_trigger"] = False
-    send_clicked = True
-
 if send_clicked and text_query and text_query.strip():
     _ts = datetime.now().strftime("%I:%M %p")
     st.session_state.messages.append({"role": "user", "content": text_query.strip(), "ts": _ts})
