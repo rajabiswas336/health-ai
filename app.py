@@ -71,7 +71,11 @@ html, body, [class*="css"] {
     color: #1a2340 !important;
 }
 .stApp { background: #f0f4f8 !important; min-height: 100vh !important; }
-#MainMenu, footer { visibility: hidden; }
+#MainMenu, footer, header { visibility: hidden; }
+/* Hide fork/github/star buttons */
+[data-testid="stToolbar"], .stDeployButton,
+a[href*="github"], button[title*="GitHub"],
+[data-testid="stDecoration"] { display: none !important; }
 
 /* ── Sidebar ── */
 [data-testid="collapsedControl"] {
@@ -677,81 +681,105 @@ if st.session_state.stored_image and not st.session_state.show_image:
     st.image(io.BytesIO(st.session_state.stored_image), width=220,
              caption=f"✓ {st.session_state.stored_img_name or 'Image ready'} — tap 🔬 Analyse Now")
 
-# ── Pill input bar — layout: [ text ... ] [ 🖼️ ] [ 🎤 ] [ 🗑️ ] ────────────────
-# Uses a 3-col layout: wide text col | icon col (img+mic) | clear col
-txt_col, icons_col, clr_col = st.columns([7, 3, 1], gap="small")
-
-mic_active = st.session_state.show_voice
-img_active = st.session_state.show_image
-
-# Pill wrapper — visually surrounds text + icons together
-st.markdown(f"""
+# ── CSS for mobile-friendly single-row toolbar ───────────────────────────────
+st.markdown("""
 <style>
-/* Make the 3 cols sit flush inside a pill */
-div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {{
+/* Input pill wrapper */
+div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {
     background: #ffffff;
     border-radius: 50px;
     border: 1.5px solid #d8eee8;
-    padding: 2px 6px 2px 18px;
+    padding: 2px 4px 2px 16px;
     align-items: center;
     box-shadow: 0 4px 24px rgba(0,100,80,0.08);
     margin-top: 6px;
-}}
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+}
+/* Make all icon cols equal and tight on mobile */
+div[data-testid="stHorizontalBlock"]:has(#pill-anchor) > div {
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    padding: 0 2px !important;
+}
+/* Shrink icon buttons on small screens */
+@media (max-width: 480px) {
+    .pill-icon .stButton > button,
+    .active-btn .stButton > button,
+    .toolbar-btn .stButton > button {
+        min-height: 34px !important;
+        min-width: 34px !important;
+        font-size: 15px !important;
+        padding: 4px !important;
+    }
+}
 </style>
 <span id='pill-anchor' style='display:none'></span>
 """, unsafe_allow_html=True)
 
+mic_active = st.session_state.show_voice
+img_active = st.session_state.show_image
+cam_active = st.session_state.show_camera
+
+# Single row: [  text input  ] [📎] [📷] [🎙] [➤] [🗑]
+txt_col, img_col, cam_col, mic_col, snd_col, clr_col = st.columns(
+    [6, 1, 1, 1, 1, 1], gap="small"
+)
+
 with txt_col:
     with st.form(key="chat_form", clear_on_submit=True):
-        f1, f2 = st.columns([10, 1], gap="small")
-        with f1:
-            text_query = st.text_input(
-                label="msg",
-                placeholder="Ask me anything...",
-                label_visibility="collapsed",
-                key=f"chat_input_{st.session_state.input_key}",
-            )
-        with f2:
-            # Hidden send — Enter key triggers it; we hide the button visually
-            st.markdown("<div style='display:none'>", unsafe_allow_html=True)
-            send_clicked = st.form_submit_button("➤")
-            st.markdown("</div>", unsafe_allow_html=True)
+        text_query = st.text_input(
+            label="msg",
+            placeholder="Ask me anything...",
+            label_visibility="collapsed",
+            key=f"chat_input_{st.session_state.input_key}",
+        )
+        # Hidden submit — triggered by Enter or send button below
+        st.markdown("<div style='display:none'>", unsafe_allow_html=True)
+        send_clicked = st.form_submit_button("➤")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-with icons_col:
-    ic1, ic2, ic3 = st.columns(3, gap="small")
-    with ic1:
-        img_class = "active-btn toolbar-btn" if img_active else "toolbar-btn pill-icon"
-        st.markdown(f"<div class='{img_class}'>", unsafe_allow_html=True)
-        if st.button("⊞", help="Upload image", key="img_btn"):
-            st.session_state.show_image  = not st.session_state.show_image
-            st.session_state.show_camera = False
-            if st.session_state.show_image:
-                st.session_state.show_voice = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-    with ic2:
-        cam_active  = st.session_state.show_camera
-        cam_class   = "active-btn toolbar-btn" if cam_active else "toolbar-btn pill-icon"
-        st.markdown(f"<div class='{cam_class}'>", unsafe_allow_html=True)
-        if st.button("📷", help="Take photo", key="cam_btn"):
-            st.session_state.show_camera = not st.session_state.show_camera
-            st.session_state.show_image  = False
-            st.session_state.show_voice  = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-    with ic3:
-        mic_class = "active-btn toolbar-btn" if mic_active else "toolbar-btn pill-icon"
-        st.markdown(f"<div class='{mic_class}'>", unsafe_allow_html=True)
-        if st.button("🎙", help="Record voice", key="mic_btn"):
-            st.session_state.show_voice  = not st.session_state.show_voice
-            st.session_state.show_camera = False
-            if st.session_state.show_voice:
-                st.session_state.show_image = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+with img_col:
+    img_class = "active-btn toolbar-btn" if img_active else "toolbar-btn pill-icon"
+    st.markdown(f"<div class='{img_class}'>", unsafe_allow_html=True)
+    if st.button("📎", help="Upload image", key="img_btn"):
+        st.session_state.show_image  = not st.session_state.show_image
+        st.session_state.show_camera = False
+        if st.session_state.show_image:
+            st.session_state.show_voice = False
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with cam_col:
+    cam_class = "active-btn toolbar-btn" if cam_active else "toolbar-btn pill-icon"
+    st.markdown(f"<div class='{cam_class}'>", unsafe_allow_html=True)
+    if st.button("📷", help="Take photo", key="cam_btn"):
+        st.session_state.show_camera = not st.session_state.show_camera
+        st.session_state.show_image  = False
+        st.session_state.show_voice  = False
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with mic_col:
+    mic_class = "active-btn toolbar-btn" if mic_active else "toolbar-btn pill-icon"
+    st.markdown(f"<div class='{mic_class}'>", unsafe_allow_html=True)
+    if st.button("🎙", help="Record voice", key="mic_btn"):
+        st.session_state.show_voice  = not st.session_state.show_voice
+        st.session_state.show_camera = False
+        if st.session_state.show_voice:
+            st.session_state.show_image = False
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with snd_col:
+    st.markdown("<div class='send-btn toolbar-btn'>", unsafe_allow_html=True)
+    if st.button("➤", help="Send", key="send_btn_icon"):
+        # Trigger send via session state flag
+        st.session_state["_send_trigger"] = True
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with clr_col:
-    st.markdown("<div class='toolbar-btn'>", unsafe_allow_html=True)
+    st.markdown("<div class='toolbar-btn pill-icon'>", unsafe_allow_html=True)
     if st.button("🗑", help="Clear chat", key="clear_btn"):
         st.session_state.messages        = []
         st.session_state.autoplay_b64    = None
@@ -765,19 +793,11 @@ with clr_col:
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ── Hint when panels are open ─────────────────────────────────────────────────
-if st.session_state.show_voice or st.session_state.show_image or st.session_state.stored_image:
-    st.markdown("""
-    <div style='font-size:10px;color:#7aaa9a;text-align:center;
-        font-family:JetBrains Mono,monospace;letter-spacing:.1em;
-        text-transform:uppercase;margin:4px 0 2px;'>
-        ↑ ready · tap 🔬 Analyse to process
-    </div>
-    """, unsafe_allow_html=True)
-
-# ── Analyse button (only when voice or image panel is open) ──────────────────
-if st.session_state.show_voice or st.session_state.show_image:
-    st.markdown("<div class='analyse-wrap' style='margin-top:4px;'>",
+# ── Analyse button — always visible just below input when image/voice ready ───
+has_input = (st.session_state.show_voice or st.session_state.stored_image
+             or st.session_state.show_image)
+if has_input:
+    st.markdown("<div class='analyse-wrap' style='margin-top:8px;'>",
                 unsafe_allow_html=True)
     analyse_clicked = st.button(
         "🔬  Analyse Now",
@@ -792,6 +812,11 @@ else:
 # ══════════════════════════════════════════════════════════════════════════════
 # ── TEXT CHAT PIPELINE ────────────────────────────────────────────────────────
 # ══════════════════════════════════════════════════════════════════════════════
+# Also handle send button icon click
+if st.session_state.get("_send_trigger"):
+    st.session_state["_send_trigger"] = False
+    send_clicked = True
+
 if send_clicked and text_query and text_query.strip():
     _ts = datetime.now().strftime("%I:%M %p")
     st.session_state.messages.append({"role": "user", "content": text_query.strip(), "ts": _ts})
