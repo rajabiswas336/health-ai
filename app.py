@@ -71,11 +71,12 @@ html, body, [class*="css"] {
     color: #1a2340 !important;
 }
 .stApp { background: #f0f4f8 !important; min-height: 100vh !important; }
-#MainMenu, footer, header { visibility: hidden; }
-[data-testid="stToolbar"], .stDeployButton,
+#MainMenu, footer { visibility: hidden; }
+/* Hide deploy/github buttons but NOT the header/sidebar toggle */
+[data-testid="stToolbar"] { visibility: hidden; }
 [data-testid="stDecoration"] { display: none !important; }
 
-/* ════ SIDEBAR TOGGLE — always clickable, even when hidden ════ */
+/* ════ SIDEBAR TOGGLE — always visible & clickable ════ */
 [data-testid="collapsedControl"] {
     visibility: visible !important;
     display: flex !important;
@@ -83,18 +84,28 @@ html, body, [class*="css"] {
     pointer-events: all !important;
     z-index: 9999999 !important;
     position: fixed !important;
-    top: 14px !important;
+    top: 50% !important;
     left: 0 !important;
-    background: #2db88a !important;
-    border-radius: 0 12px 12px 0 !important;
-    padding: 8px 10px !important;
-    box-shadow: 3px 2px 12px rgba(45,184,138,0.35) !important;
+    transform: translateY(-50%) !important;
+    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
+    border-radius: 0 16px 16px 0 !important;
+    padding: 14px 10px !important;
+    box-shadow: 4px 0 16px rgba(45,184,138,0.4) !important;
     cursor: pointer !important;
+    min-width: 32px !important;
+    min-height: 48px !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
+[data-testid="collapsedControl"] svg,
+[data-testid="collapsedControl"] button,
 [data-testid="collapsedControl"] * {
-    fill: #fff !important;
-    color: #fff !important;
+    fill: #ffffff !important;
+    color: #ffffff !important;
+    stroke: #ffffff !important;
     pointer-events: all !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 [data-testid="stSidebarCollapseButton"] {
     visibility: visible !important;
@@ -155,8 +166,10 @@ html, body, [class*="css"] {
     }
 }
 
-/* ════ TOOLBAR CIRCLE BUTTONS ════ */
-.tb-col .stButton > button {
+/* ════ TOOLBAR CIRCLE BUTTONS — teal theme, force on all devices ════ */
+.tb-col .stButton > button,
+.tb-col .stButton > button:focus,
+.tb-col .stButton > button:active {
     width: 40px !important;
     height: 40px !important;
     min-width: 40px !important;
@@ -164,50 +177,46 @@ html, body, [class*="css"] {
     border-radius: 50% !important;
     padding: 0 !important;
     font-size: 17px !important;
-    line-height: 40px !important;
-    text-align: center !important;
-    background: #f0faf6 !important;
-    border: 1.5px solid #b8e0d0 !important;
-    color: #2db88a !important;
-    box-shadow: 0 2px 8px rgba(45,184,138,0.13) !important;
-    flex-shrink: 0 !important;
-}
-.tb-col .stButton > button:hover {
-    background: #d8f5ea !important;
-    border-color: #2db88a !important;
-    transform: none !important;
-}
-.tb-col-active .stButton > button {
-    background: #c8f0e0 !important;
-    border: 2px solid #2db88a !important;
-    color: #127a58 !important;
-}
-.tb-col-send .stButton > button {
     background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
     border: none !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(45,184,138,0.45) !important;
+    box-shadow: 0 3px 12px rgba(45,184,138,0.4) !important;
+    flex-shrink: 0 !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
 }
-.tb-col-clear .stButton > button {
-    background: #fff5f5 !important;
-    border: 1.5px solid #ffc0c0 !important;
-    color: #cc4444 !important;
+.tb-col .stButton > button:hover {
+    background: linear-gradient(135deg,#25a87d,#158060) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 5px 18px rgba(45,184,138,0.5) !important;
 }
+.tb-col-active .stButton > button,
+.tb-col-active .stButton > button:focus {
+    background: linear-gradient(135deg,#1a9e70,#12784e) !important;
+    border: 2.5px solid #0d5c3a !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(45,184,138,0.5), inset 0 1px 4px rgba(0,0,0,0.15) !important;
+}
+.tb-col-send .stButton > button,
+.tb-col-send .stButton > button:focus {
+    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(45,184,138,0.5) !important;
+}
+.tb-col-clear .stButton > button,
+.tb-col-clear .stButton > button:focus {
+    background: linear-gradient(135deg,#ff7070,#e04444) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(220,60,60,0.35) !important;
+}
+/* Force override mobile dark mode for ALL toolbar buttons */
 @media (prefers-color-scheme: dark) {
-    .tb-col .stButton > button,
-    .tb-col-active .stButton > button {
-        background: #f0faf6 !important;
-        color: #2db88a !important;
-        border-color: #b8e0d0 !important;
-    }
-    .tb-col-send .stButton > button {
-        background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-        color: #fff !important;
-    }
-    .tb-col-clear .stButton > button {
-        background: #fff5f5 !important;
-        color: #cc4444 !important;
-    }
+    .tb-col .stButton > button { background: linear-gradient(135deg,#2db88a,#1a9e70) !important; color: #fff !important; }
+    .tb-col-active .stButton > button { background: linear-gradient(135deg,#1a9e70,#12784e) !important; color: #fff !important; }
+    .tb-col-send .stButton > button { background: linear-gradient(135deg,#2db88a,#1a9e70) !important; color: #fff !important; }
+    .tb-col-clear .stButton > button { background: linear-gradient(135deg,#ff7070,#e04444) !important; color: #fff !important; }
 }
 
 /* ════ ANALYSE BUTTON ════ */
