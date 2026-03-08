@@ -72,126 +72,223 @@ html, body, [class*="css"] {
 }
 .stApp { background: #f0f4f8 !important; min-height: 100vh !important; }
 #MainMenu, footer, header { visibility: hidden; }
-/* Hide fork/github/star buttons */
 [data-testid="stToolbar"], .stDeployButton,
-a[href*="github"], button[title*="GitHub"],
 [data-testid="stDecoration"] { display: none !important; }
 
-/* ── Sidebar ── */
+/* ════ SIDEBAR TOGGLE — always clickable, even when hidden ════ */
 [data-testid="collapsedControl"] {
-    visibility: visible !important; display: flex !important;
-    opacity: 1 !important; pointer-events: all !important;
-    z-index: 999999 !important; background: #e8f5f0 !important;
-    border-radius: 0 10px 10px 0 !important;
+    visibility: visible !important;
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    z-index: 9999999 !important;
+    position: fixed !important;
+    top: 14px !important;
+    left: 0 !important;
+    background: #2db88a !important;
+    border-radius: 0 12px 12px 0 !important;
+    padding: 8px 10px !important;
+    box-shadow: 3px 2px 12px rgba(45,184,138,0.35) !important;
+    cursor: pointer !important;
+}
+[data-testid="collapsedControl"] * {
+    fill: #fff !important;
+    color: #fff !important;
+    pointer-events: all !important;
+}
+[data-testid="stSidebarCollapseButton"] {
+    visibility: visible !important;
+    pointer-events: all !important;
 }
 [data-testid="stSidebar"] {
     background: #ffffff !important;
-    border-right: 1px solid #e8eef4 !important;
+    border-right: 1px solid #e0eef4 !important;
+    z-index: 999999 !important;
 }
 [data-testid="stSidebar"] * { color: #2d4060 !important; }
 [data-testid="stSidebarContent"] { padding: 24px 18px !important; }
 [data-testid="stRadio"] label {
     background: #f0f7f4 !important;
     border: 1px solid #d0e8e0 !important;
-    border-radius: 12px !important; padding: 10px 14px !important;
-    margin: 4px 0 !important; transition: background .2s !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    margin: 4px 0 !important;
     color: #2d4060 !important;
 }
 [data-testid="stRadio"] label:hover { background: #d8f0e8 !important; }
 [data-testid="stSelectbox"] > div > div {
     background: #f0f7f4 !important;
     border: 1px solid #d0e8e0 !important;
-    border-radius: 12px !important; color: #2d4060 !important;
+    border-radius: 12px !important;
+    color: #2d4060 !important;
 }
 
-/* ── Quick action buttons ── */
+/* ════ BASE BUTTON — teal/white, no dark mode hijack ════ */
 .stButton > button {
-    background: #ffffff !important; color: #2d5a4e !important;
-    border: 1.5px solid #d0e8e0 !important;
-    border-radius: 16px !important; font-weight: 600 !important;
-    font-size: 12px !important; padding: 12px 6px !important;
-    width: 100% !important; transition: all .2s !important;
-    line-height: 1.5 !important;
-    box-shadow: 0 2px 8px rgba(0,150,100,0.08) !important;
+    background: #ffffff !important;
+    color: #1a7a5e !important;
+    border: 1.5px solid #b8e0d0 !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    padding: 9px 8px !important;
+    width: 100% !important;
+    transition: all .18s !important;
+    line-height: 1.4 !important;
+    box-shadow: 0 2px 8px rgba(0,150,100,0.07) !important;
+    -webkit-appearance: none !important;
+    cursor: pointer !important;
 }
 .stButton > button:hover {
-    background: #e8f5f0 !important; transform: translateY(-2px) !important;
-    border-color: #2db88a !important; color: #1a7a5e !important;
-    box-shadow: 0 4px 16px rgba(0,150,100,0.15) !important;
+    background: #e4f7f0 !important;
+    border-color: #2db88a !important;
+    color: #127a58 !important;
+    box-shadow: 0 4px 16px rgba(45,184,138,0.2) !important;
+    transform: translateY(-1px) !important;
+}
+/* Force light on ALL devices including mobile dark mode */
+@media (prefers-color-scheme: dark) {
+    .stButton > button {
+        background: #ffffff !important;
+        color: #1a7a5e !important;
+        border-color: #b8e0d0 !important;
+    }
 }
 
-/* ── Toolbar icon buttons ── */
-.toolbar-btn .stButton > button {
-    background: transparent !important;
-    border: none !important; border-radius: 50% !important;
-    padding: 6px !important; font-size: 20px !important;
-    min-height: 38px !important; min-width: 38px !important;
-    line-height: 1 !important; color: #7a9aaa !important;
-    transition: color .15s, background .15s !important;
-}
-.toolbar-btn .stButton > button:hover {
-    background: rgba(0,150,100,0.08) !important;
-    color: #2db88a !important;
-}
-
-/* ── Pill icon ── */
-.pill-icon .stButton > button {
-    background: rgba(0,150,100,0.07) !important;
-    border: 1.5px solid rgba(0,150,100,0.18) !important;
+/* ════ TOOLBAR CIRCLE BUTTONS ════ */
+.tb-col .stButton > button {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
     border-radius: 50% !important;
-    min-height: 36px !important; min-width: 36px !important;
-    font-size: 17px !important; color: #2db88a !important;
+    padding: 0 !important;
+    font-size: 17px !important;
+    line-height: 40px !important;
+    text-align: center !important;
+    background: #f0faf6 !important;
+    border: 1.5px solid #b8e0d0 !important;
+    color: #2db88a !important;
+    box-shadow: 0 2px 8px rgba(45,184,138,0.13) !important;
+    flex-shrink: 0 !important;
 }
-.pill-icon .stButton > button:hover {
-    background: rgba(0,150,100,0.15) !important; color: #1a7a5e !important;
+.tb-col .stButton > button:hover {
+    background: #d8f5ea !important;
+    border-color: #2db88a !important;
+    transform: none !important;
 }
-
-/* ── Active icon ── */
-.active-btn .stButton > button {
-    background: rgba(45,184,138,0.18) !important;
-    border: 1.5px solid #2db88a !important;
-    border-radius: 50% !important; color: #1a7a5e !important;
+.tb-col-active .stButton > button {
+    background: #c8f0e0 !important;
+    border: 2px solid #2db88a !important;
+    color: #127a58 !important;
 }
-
-/* ── Send button ── */
-.send-btn .stButton > button,
-.send-btn [data-testid="stFormSubmitButton"] > button {
+.tb-col-send .stButton > button {
     background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    color: #fff !important; border: none !important;
-    border-radius: 50% !important; padding: 6px !important;
-    font-size: 18px !important; font-weight: 800 !important;
-    min-height: 38px !important; min-width: 38px !important;
-    box-shadow: 0 4px 14px rgba(45,184,138,0.4) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(45,184,138,0.45) !important;
+}
+.tb-col-clear .stButton > button {
+    background: #fff5f5 !important;
+    border: 1.5px solid #ffc0c0 !important;
+    color: #cc4444 !important;
+}
+@media (prefers-color-scheme: dark) {
+    .tb-col .stButton > button,
+    .tb-col-active .stButton > button {
+        background: #f0faf6 !important;
+        color: #2db88a !important;
+        border-color: #b8e0d0 !important;
+    }
+    .tb-col-send .stButton > button {
+        background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
+        color: #fff !important;
+    }
+    .tb-col-clear .stButton > button {
+        background: #fff5f5 !important;
+        color: #cc4444 !important;
+    }
 }
 
-/* ── Analyse button ── */
+/* ════ ANALYSE BUTTON ════ */
 .analyse-wrap .stButton > button {
     background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    color: #fff !important; border: none !important;
-    border-radius: 14px !important; font-size: 14px !important;
-    font-weight: 700 !important; padding: 13px !important;
-    box-shadow: 0 6px 22px rgba(45,184,138,0.3) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 16px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    padding: 14px !important;
+    box-shadow: 0 6px 22px rgba(45,184,138,0.35) !important;
+    letter-spacing: .02em !important;
 }
+.analyse-wrap .stButton > button:hover { transform: translateY(-1px) !important; }
 
-/* ── Form chrome ── */
+/* ════ FORM / TEXT INPUT ════ */
 [data-testid="stForm"] {
     border: none !important; padding: 0 !important;
     background: transparent !important; box-shadow: none !important;
 }
-
-/* ── Text input ── */
 [data-testid="stTextInput"] input {
     background: transparent !important;
     border: none !important; outline: none !important;
     color: #1a2340 !important;
-    padding: 10px 4px !important; font-size: 14px !important;
+    padding: 10px 4px !important;
+    font-size: 14px !important;
+    -webkit-text-fill-color: #1a2340 !important;
 }
-[data-testid="stTextInput"] input::placeholder { color: rgba(100,130,150,0.55) !important; }
+[data-testid="stTextInput"] input::placeholder { color: #9ab8c0 !important; }
 [data-testid="stTextInput"] > div {
     background: transparent !important; border: none !important; box-shadow: none !important;
 }
 
-/* ── Audio input ── */
+/* ════ INPUT PILL ROW ════ */
+.pill-row [data-testid="stHorizontalBlock"] {
+    background: #ffffff !important;
+    border-radius: 50px !important;
+    border: 1.5px solid #c8e8de !important;
+    padding: 3px 6px 3px 16px !important;
+    box-shadow: 0 3px 16px rgba(0,120,80,0.09) !important;
+    margin-top: 8px !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 2px !important;
+}
+
+/* ════ MOBILE: ALL columns stay horizontal ════ */
+[data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 4px !important;
+}
+[data-testid="stHorizontalBlock"]::-webkit-scrollbar { display: none !important; }
+[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+    flex-shrink: 0 !important;
+    min-width: 0 !important;
+}
+
+/* Quick action chips — compact on mobile */
+.qa-col .stButton > button {
+    white-space: nowrap !important;
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+    border-radius: 20px !important;
+}
+@media (max-width: 480px) {
+    .qa-col .stButton > button { font-size: 10px !important; padding: 7px 6px !important; }
+    .tb-col .stButton > button,
+    .tb-col-active .stButton > button,
+    .tb-col-send .stButton > button,
+    .tb-col-clear .stButton > button {
+        width: 36px !important; height: 36px !important;
+        min-width: 36px !important; min-height: 36px !important;
+        font-size: 15px !important;
+    }
+}
+
+/* ════ AUDIO / FILE / CAMERA INPUTS ════ */
 [data-testid="stAudioInput"] {
     background: #f0faf6 !important;
     border: 1.5px solid rgba(45,184,138,0.3) !important;
@@ -200,24 +297,18 @@ a[href*="github"], button[title*="GitHub"],
 [data-testid="stAudioInput"] button {
     background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
     border-radius: 50% !important;
-    box-shadow: 0 0 0 8px rgba(45,184,138,0.12) !important;
 }
-
-/* ── File uploader ── */
 [data-testid="stFileUploader"] section {
     background: #f0faf6 !important;
     border: 2px dashed rgba(45,184,138,0.4) !important;
-    border-radius: 14px !important; cursor: pointer !important;
-    transition: all .2s !important;
+    border-radius: 14px !important;
 }
 [data-testid="stFileUploader"] section:hover {
     border-color: #2db88a !important; background: #e4f7f0 !important;
 }
 [data-testid="stFileUploaderDropzoneInstructions"] span {
-    color: #2db88a !important; font-size: 13px !important; font-weight: 700 !important;
+    color: #2db88a !important; font-weight: 700 !important;
 }
-
-/* ── Camera input ── */
 [data-testid="stCameraInput"] {
     background: #f0faf6 !important;
     border: 1.5px solid rgba(45,184,138,0.3) !important;
@@ -225,45 +316,35 @@ a[href*="github"], button[title*="GitHub"],
 }
 [data-testid="stCameraInput"] button {
     background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    color: #fff !important; border-radius: 10px !important;
-    border: none !important;
+    color: #fff !important; border-radius: 10px !important; border: none !important;
 }
 
-/* ── Audio player ── */
+/* ════ CHAT BOX CONTAINER ════ */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #ffffff !important;
+    border: 1.5px solid #d0eee8 !important;
+    border-radius: 20px !important;
+    padding: 10px 8px !important;
+    box-shadow: 0 4px 24px rgba(0,100,80,0.07) !important;
+}
+
 audio {
     width: 100% !important; border-radius: 10px !important;
     margin-top: 3px !important; height: 36px !important;
 }
-
-/* ── Image preview ── */
 [data-testid="stImage"] img {
-    max-height: 200px !important; max-width: 100% !important;
-    width: auto !important; border-radius: 14px !important;
-    object-fit: contain !important; display: block !important; margin: 4px auto !important;
+    max-height: 200px !important; border-radius: 14px !important;
     box-shadow: 0 4px 20px rgba(0,80,60,0.12) !important;
 }
-
-/* ── Alerts ── */
 [data-testid="stAlert"] {
-    background: #f0faf6 !important;
-    border: 1px solid #b8e8d8 !important;
+    background: #f0faf6 !important; border: 1px solid #b8e8d8 !important;
     border-radius: 12px !important; color: #1a5040 !important;
 }
-
 hr { border-color: #e0eae4 !important; }
-[data-testid="stCaptionContainer"] p { color: #7a9aaa !important; font-size: 11px !important; }
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #b8d8cc; border-radius: 4px; }
-.block-container { max-width: 700px !important; padding: 20px 16px 60px !important; margin: 0 auto !important; }
+.block-container { max-width: 700px !important; padding: 12px 10px 80px !important; margin: 0 auto !important; }
 [data-testid="stSpinner"] p { color: #2db88a !important; }
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #ffffff !important;
-    border: 1.5px solid #e0eef8 !important;
-    border-radius: 20px !important;
-    padding: 10px 6px !important;
-    box-shadow: 0 4px 24px rgba(0,80,120,0.07) !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -498,47 +579,30 @@ st.markdown("""
     margin:4px 0 10px;text-align:center;'>Quick Actions</div>
 """, unsafe_allow_html=True)
 
-c1,c2,c3,c4,c5,c6 = st.columns(6)
-with c1:
-    if st.button("🎤\nVoice"):
-        st.session_state.show_voice = True; st.rerun()
-with c2:
-    if st.button("🖼️\nImage"):
-        st.session_state.show_image = True; st.rerun()
-with c3:
-    if st.button("🩺\nSkin"):
-        st.session_state.show_voice = True
-        st.session_state.show_image = True; st.rerun()
-with c4:
-    if st.button("🫁\nX-Ray"):
-        st.session_state.show_image = True; st.rerun()
-with c5:
-    if st.button("🌐\nবাংলা"):
-        st.session_state.show_voice = True; st.rerun()
-with c6:
-    if st.button("💊\nAsk"):
-        pass
+# Quick actions — horizontal scrollable chips
+_qa_labels = ["🎤 Voice","🖼️ Image","🩺 Skin","🫁 X-Ray","🌐 বাংলা","💊 Ask"]
+_qcols = st.columns(6, gap="small")
+for _i, _col in enumerate(_qcols):
+    with _col:
+        st.markdown("<div class='qa-col'>", unsafe_allow_html=True)
+        _clicked = st.button(_qa_labels[_i], key=f"qa_{_i}")
+        st.markdown("</div>", unsafe_allow_html=True)
+        if _clicked:
+            if _i == 0: st.session_state.show_voice = True
+            elif _i == 1: st.session_state.show_image = True
+            elif _i == 2: st.session_state.show_voice = True; st.session_state.show_image = True
+            elif _i == 3: st.session_state.show_image = True
+            elif _i == 4: st.session_state.show_voice = True
+            st.rerun()
 
-st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ── CHAT WINDOW ──────────────────────────────════════════════════════════════
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Style the chat container via CSS targeting the next sibling block
-st.markdown("""
-<style>
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stVerticalBlock"] > div > div[data-testid="stMarkdownContainer"] > div.chat-anchor) {
-    background: linear-gradient(180deg,#12152a 0%,#161929 100%) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 18px !important;
-    padding: 14px !important;
-    min-height: 300px !important;
-}
-</style>
-<div class="chat-anchor" style="display:none"></div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="chat-anchor" style="display:none"></div>', unsafe_allow_html=True)
 
 with st.container():
     if st.session_state.messages:
@@ -681,133 +745,84 @@ if st.session_state.stored_image and not st.session_state.show_image:
     st.image(io.BytesIO(st.session_state.stored_image), width=220,
              caption=f"✓ {st.session_state.stored_img_name or 'Image ready'} — tap 🔬 Analyse Now")
 
-# ── CSS for mobile-friendly single-row toolbar ───────────────────────────────
-st.markdown("""
-<style>
-/* Input pill wrapper */
-div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {
-    background: #ffffff;
-    border-radius: 50px;
-    border: 1.5px solid #d8eee8;
-    padding: 2px 4px 2px 16px;
-    align-items: center;
-    box-shadow: 0 4px 24px rgba(0,100,80,0.08);
-    margin-top: 6px;
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-}
-/* Make all icon cols equal and tight on mobile */
-div[data-testid="stHorizontalBlock"]:has(#pill-anchor) > div {
-    min-width: 0 !important;
-    flex-shrink: 0 !important;
-    padding: 0 2px !important;
-}
-/* Shrink icon buttons on small screens */
-@media (max-width: 480px) {
-    .pill-icon .stButton > button,
-    .active-btn .stButton > button,
-    .toolbar-btn .stButton > button {
-        min-height: 34px !important;
-        min-width: 34px !important;
-        font-size: 15px !important;
-        padding: 4px !important;
-    }
-}
-</style>
-<span id='pill-anchor' style='display:none'></span>
-""", unsafe_allow_html=True)
-
+# ── Input bar — pill row with all controls horizontal ────────────────────────
 mic_active = st.session_state.show_voice
 img_active = st.session_state.show_image
 cam_active = st.session_state.show_camera
 
-# Single row: [  text input  ] [📎] [📷] [🎙] [➤] [🗑]
-txt_col, img_col, cam_col, mic_col, snd_col, clr_col = st.columns(
-    [6, 1, 1, 1, 1, 1], gap="small"
-)
+st.markdown("<div class='pill-row'>", unsafe_allow_html=True)
+_c_txt, _c_img, _c_cam, _c_mic, _c_snd, _c_clr = st.columns([6,1,1,1,1,1], gap="small")
 
-with txt_col:
+with _c_txt:
     with st.form(key="chat_form", clear_on_submit=True):
         text_query = st.text_input(
-            label="msg",
-            placeholder="Ask me anything...",
+            label="msg", placeholder="Ask me anything...",
             label_visibility="collapsed",
             key=f"chat_input_{st.session_state.input_key}",
         )
-        # Hidden submit — triggered by Enter or send button below
         st.markdown("<div style='display:none'>", unsafe_allow_html=True)
         send_clicked = st.form_submit_button("➤")
         st.markdown("</div>", unsafe_allow_html=True)
 
-with img_col:
-    img_class = "active-btn toolbar-btn" if img_active else "toolbar-btn pill-icon"
-    st.markdown(f"<div class='{img_class}'>", unsafe_allow_html=True)
+with _c_img:
+    _cls = "tb-col-active" if img_active else "tb-col"
+    st.markdown(f"<div class='{_cls}'>", unsafe_allow_html=True)
     if st.button("📎", help="Upload image", key="img_btn"):
-        st.session_state.show_image  = not st.session_state.show_image
+        st.session_state.show_image  = not img_active
         st.session_state.show_camera = False
-        if st.session_state.show_image:
-            st.session_state.show_voice = False
+        if st.session_state.show_image: st.session_state.show_voice = False
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-with cam_col:
-    cam_class = "active-btn toolbar-btn" if cam_active else "toolbar-btn pill-icon"
-    st.markdown(f"<div class='{cam_class}'>", unsafe_allow_html=True)
+with _c_cam:
+    _cls = "tb-col-active" if cam_active else "tb-col"
+    st.markdown(f"<div class='{_cls}'>", unsafe_allow_html=True)
     if st.button("📷", help="Take photo", key="cam_btn"):
-        st.session_state.show_camera = not st.session_state.show_camera
+        st.session_state.show_camera = not cam_active
         st.session_state.show_image  = False
         st.session_state.show_voice  = False
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-with mic_col:
-    mic_class = "active-btn toolbar-btn" if mic_active else "toolbar-btn pill-icon"
-    st.markdown(f"<div class='{mic_class}'>", unsafe_allow_html=True)
+with _c_mic:
+    _cls = "tb-col-active" if mic_active else "tb-col"
+    st.markdown(f"<div class='{_cls}'>", unsafe_allow_html=True)
     if st.button("🎙", help="Record voice", key="mic_btn"):
-        st.session_state.show_voice  = not st.session_state.show_voice
+        st.session_state.show_voice  = not mic_active
         st.session_state.show_camera = False
-        if st.session_state.show_voice:
-            st.session_state.show_image = False
+        if st.session_state.show_voice: st.session_state.show_image = False
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-with snd_col:
-    st.markdown("<div class='send-btn toolbar-btn'>", unsafe_allow_html=True)
-    if st.button("➤", help="Send", key="send_btn_icon"):
-        # Trigger send via session state flag
+with _c_snd:
+    st.markdown("<div class='tb-col-send'>", unsafe_allow_html=True)
+    if st.button("➤", help="Send", key="send_icon_btn"):
         st.session_state["_send_trigger"] = True
     st.markdown("</div>", unsafe_allow_html=True)
 
-with clr_col:
-    st.markdown("<div class='toolbar-btn pill-icon'>", unsafe_allow_html=True)
+with _c_clr:
+    st.markdown("<div class='tb-col-clear'>", unsafe_allow_html=True)
     if st.button("🗑", help="Clear chat", key="clear_btn"):
-        st.session_state.messages        = []
-        st.session_state.autoplay_b64    = None
-        st.session_state.stored_audio    = None
-        st.session_state.stored_image    = None
-        st.session_state.stored_img_name = None
-        st.session_state.show_voice      = False
-        st.session_state.show_image      = False
-        st.session_state.show_camera     = False
-        st.session_state.input_key      += 1
+        for _k in ["messages","autoplay_b64","stored_audio","stored_image","stored_img_name"]:
+            st.session_state[_k] = [] if _k == "messages" else None
+        st.session_state.show_voice  = False
+        st.session_state.show_image  = False
+        st.session_state.show_camera = False
+        st.session_state.input_key  += 1
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ── Analyse button — always visible just below input when image/voice ready ───
-has_input = (st.session_state.show_voice or st.session_state.stored_image
-             or st.session_state.show_image)
-if has_input:
-    st.markdown("<div class='analyse-wrap' style='margin-top:8px;'>",
-                unsafe_allow_html=True)
-    analyse_clicked = st.button(
-        "🔬  Analyse Now",
-        use_container_width=True,
-        key="analyse_btn",
-    )
+st.markdown("</div>", unsafe_allow_html=True)  # end pill-row
+
+# ── Analyse button — shown directly below input bar when image/voice ready ────
+_has_media = (st.session_state.show_voice or st.session_state.stored_image
+              or st.session_state.show_image)
+if _has_media:
+    st.markdown("<div class='analyse-wrap' style='margin-top:8px;'>", unsafe_allow_html=True)
+    analyse_clicked = st.button("🔬  Analyse Now", use_container_width=True, key="analyse_btn")
     st.markdown("</div>", unsafe_allow_html=True)
 else:
     analyse_clicked = False
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ── TEXT CHAT PIPELINE ────────────────────────────────────────────────────────
