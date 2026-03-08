@@ -17,6 +17,15 @@ from language_utils import translate_to_english, translate_to_bengali, get_whisp
 
 load_dotenv()
 
+# ── Page config — MUST be first Streamlit call ────────────────────────────────
+st.set_page_config(
+    page_title="AI Healthcare Assistant",
+    page_icon="🫀",
+    layout="centered",
+    initial_sidebar_state="expanded",
+)
+
+# ── API Keys — read AFTER set_page_config so st.secrets is available ──────────
 def _get_secret(key: str) -> str:
     """Read from Streamlit secrets (cloud) or .env (local)."""
     try:
@@ -24,20 +33,12 @@ def _get_secret(key: str) -> str:
     except Exception:
         return os.environ.get(key, "")
 
-GROQ_API_KEY      = _get_secret("GROQ_API_KEY")
+GROQ_API_KEY       = _get_secret("GROQ_API_KEY")
 ELEVENLABS_API_KEY = _get_secret("ELEVENLABS_API_KEY")
 
-# Pass keys to submodules via environment so they pick them up
+# Pass to submodules via environment
 os.environ["GROQ_API_KEY"]       = GROQ_API_KEY
 os.environ["ELEVENLABS_API_KEY"] = ELEVENLABS_API_KEY
-
-# ── Page config ───────────────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="AI Healthcare Assistant",
-    page_icon="🫀",
-    layout="centered",
-    initial_sidebar_state="expanded",
-)
 
 # ── Session state defaults ────────────────────────────────────────────────────
 defaults = {
