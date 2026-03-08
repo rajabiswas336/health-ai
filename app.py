@@ -61,335 +61,430 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
+# ── CSS — Apple Glassmorphism · Filter Blue Theme ──────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
 html, body, [class*="css"] {
-    font-family: 'Nunito', sans-serif !important;
-    color: #e0e6f0 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+    color: #1a2a4a !important;
 }
-.stApp { background: #1a1d2e !important; min-height: 100vh !important; }
-#MainMenu, footer { visibility: hidden; }
 
+/* ══ BACKGROUND — light blue gradient with soft noise ══ */
+.stApp {
+    background: linear-gradient(145deg,
+        #ddeeff 0%,
+        #c8e0ff 20%,
+        #d4eaff 40%,
+        #bdd5ff 60%,
+        #cce4ff 80%,
+        #ddeeff 100%) !important;
+    min-height: 100vh !important;
+    position: relative !important;
+}
+.stApp::before {
+    content: '';
+    position: fixed;
+    top: -40%;
+    left: -20%;
+    width: 80vw;
+    height: 80vw;
+    background: radial-gradient(circle, rgba(100,160,255,0.35) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+.stApp::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(140,100,255,0.2) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+#MainMenu, footer { visibility: hidden; }
+[data-testid="stToolbar"] { visibility: hidden !important; }
+[data-testid="stDecoration"] { display: none !important; }
+
+/* ══ SIDEBAR TOGGLE ══ */
 [data-testid="collapsedControl"] {
     visibility: visible !important; display: flex !important;
     opacity: 1 !important; pointer-events: all !important;
-    z-index: 999999 !important; background: #2e3250 !important;
-    border-radius: 0 10px 10px 0 !important;
+    z-index: 999999 !important;
+    background: rgba(255,255,255,0.55) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 0 14px 14px 0 !important;
+    border: 1px solid rgba(255,255,255,0.7) !important;
+    box-shadow: 2px 0 16px rgba(80,130,255,0.18) !important;
 }
-[data-testid="stSidebarCollapseButton"] {
-    visibility: visible !important; pointer-events: all !important;
-}
+[data-testid="collapsedControl"] svg { fill: #3a7bd5 !important; }
+[data-testid="stSidebarCollapseButton"] { visibility: visible !important; pointer-events: all !important; }
+
+/* ══ SIDEBAR ══ */
 [data-testid="stSidebar"] {
-    background: #1e2236 !important;
-    border-right: 1px solid rgba(255,255,255,0.06) !important;
+    background: rgba(220,235,255,0.75) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+    border-right: 1px solid rgba(255,255,255,0.6) !important;
+    box-shadow: 4px 0 32px rgba(80,130,255,0.12) !important;
 }
-[data-testid="stSidebar"] * { color: #c8d0e8 !important; }
+[data-testid="stSidebar"] * { color: #1a3060 !important; }
 [data-testid="stSidebarContent"] { padding: 24px 18px !important; }
 [data-testid="stRadio"] label {
-    background: #252840 !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
+    background: rgba(255,255,255,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.8) !important;
     border-radius: 12px !important; padding: 10px 14px !important;
-    margin: 4px 0 !important; transition: background .2s !important;
+    margin: 4px 0 !important; transition: all .2s !important;
+    backdrop-filter: blur(10px) !important;
 }
-[data-testid="stRadio"] label:hover { background: #2e3258 !important; }
+[data-testid="stRadio"] label:hover {
+    background: rgba(255,255,255,0.75) !important;
+    box-shadow: 0 2px 12px rgba(80,130,255,0.15) !important;
+}
 [data-testid="stSelectbox"] > div > div {
-    background: #252840 !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 12px !important; color: #c8d0e8 !important;
+    background: rgba(255,255,255,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.8) !important;
+    border-radius: 12px !important; color: #1a3060 !important;
+    backdrop-filter: blur(10px) !important;
 }
 
-/* ── Quick action grid buttons ── */
+/* ══ ALL BUTTONS — glass style ══ */
 .stButton > button {
-    background: #22263d !important; color: #b0bcd8 !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 14px !important; font-weight: 700 !important;
-    font-size: 12px !important; padding: 12px 6px !important;
-    width: 100% !important; transition: all .2s !important;
+    background: rgba(255,255,255,0.55) !important;
+    color: #1a4080 !important;
+    border: 1px solid rgba(255,255,255,0.75) !important;
+    border-radius: 16px !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    padding: 10px 6px !important;
+    width: 100% !important;
+    transition: all .22s cubic-bezier(.25,.8,.25,1) !important;
     line-height: 1.5 !important;
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+    box-shadow: 0 2px 16px rgba(80,130,255,0.12),
+                inset 0 1px 0 rgba(255,255,255,0.8) !important;
+    -webkit-appearance: none !important;
 }
 .stButton > button:hover {
-    background: #2a3060 !important; transform: translateY(-2px) !important;
-    border-color: rgba(92,111,255,0.4) !important; color: #e0e6f0 !important;
+    background: rgba(255,255,255,0.78) !important;
+    transform: translateY(-2px) scale(1.01) !important;
+    box-shadow: 0 8px 28px rgba(80,130,255,0.22),
+                inset 0 1px 0 rgba(255,255,255,0.9) !important;
+    border-color: rgba(100,160,255,0.5) !important;
+}
+@media (prefers-color-scheme: dark) {
+    .stButton > button {
+        background: rgba(255,255,255,0.55) !important;
+        color: #1a4080 !important;
+        border-color: rgba(255,255,255,0.75) !important;
+    }
 }
 
-/* ── Toolbar icon buttons ── */
+/* ══ TOOLBAR ICON BUTTONS ══ */
 .toolbar-btn .stButton > button {
-    background: transparent !important;
-    border: none !important;
+    background: rgba(255,255,255,0.45) !important;
+    border: 1px solid rgba(255,255,255,0.7) !important;
     border-radius: 50% !important;
-    padding: 6px !important;
-    font-size: 20px !important;
-    font-weight: 400 !important;
-    min-height: 38px !important;
-    min-width: 38px !important;
+    padding: 5px !important;
+    font-size: 19px !important;
+    min-height: 38px !important; min-width: 38px !important;
     line-height: 1 !important;
-    color: #8899bb !important;
-    transition: color .15s, background .15s !important;
+    color: #3a7bd5 !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 2px 12px rgba(80,130,255,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.9) !important;
 }
 .toolbar-btn .stButton > button:hover {
-    background: rgba(255,255,255,0.07) !important;
+    background: rgba(255,255,255,0.75) !important;
     transform: none !important;
-    color: #e0e6f0 !important;
+    box-shadow: 0 4px 20px rgba(80,130,255,0.25),
+                inset 0 1px 0 rgba(255,255,255,1) !important;
 }
 
-/* ── Pill icon style (inside pill bar) ── */
+/* ══ PILL ICON ══ */
 .pill-icon .stButton > button {
-    background: rgba(255,255,255,0.06) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: rgba(255,255,255,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.75) !important;
     border-radius: 50% !important;
-    min-height: 36px !important;
-    min-width: 36px !important;
-    font-size: 18px !important;
-    color: #99aacc !important;
+    min-height: 36px !important; min-width: 36px !important;
+    font-size: 17px !important; color: #3a7bd5 !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 2px 10px rgba(80,130,255,0.14),
+                inset 0 1px 0 rgba(255,255,255,0.9) !important;
 }
 .pill-icon .stButton > button:hover {
-    background: rgba(255,255,255,0.12) !important;
-    color: #fff !important;
+    background: rgba(255,255,255,0.8) !important;
+    color: #1a5ad5 !important;
+}
+@media (prefers-color-scheme: dark) {
+    .pill-icon .stButton > button { background: rgba(255,255,255,0.5) !important; color: #3a7bd5 !important; }
 }
 
-/* ── Active toolbar button (panel open) ── */
+/* ══ ACTIVE ICON ══ */
 .active-btn .stButton > button {
-    background: rgba(92,111,255,0.22) !important;
-    border: 1px solid rgba(92,111,255,0.5) !important;
-    border-radius: 50% !important;
-    color: #8899ff !important;
+    background: rgba(58,123,213,0.22) !important;
+    border: 1px solid rgba(58,123,213,0.5) !important;
+    border-radius: 50% !important; color: #1a5ad5 !important;
+    box-shadow: 0 0 0 3px rgba(58,123,213,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.6) !important;
 }
 
-/* ── Send button (hidden — Enter key used instead) ── */
-.send-btn .stButton > button,
-.send-btn [data-testid="stFormSubmitButton"] > button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
-    color: #fff !important; border: none !important;
-    border-radius: 50% !important; padding: 6px !important;
-    font-size: 18px !important; font-weight: 800 !important;
-    min-height: 38px !important; min-width: 38px !important;
-    box-shadow: 0 4px 14px rgba(92,111,255,0.45) !important;
-}
-
-/* ── Analyse button ── */
+/* ══ ANALYSE BUTTON ══ */
 .analyse-wrap .stButton > button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
+    background: linear-gradient(135deg,
+        rgba(58,123,213,0.9) 0%,
+        rgba(100,160,255,0.85) 100%) !important;
     color: #fff !important; border: none !important;
-    border-radius: 14px !important; font-size: 14px !important;
-    font-weight: 800 !important; padding: 13px !important;
-    box-shadow: 0 6px 22px rgba(92,111,255,0.35) !important;
-    letter-spacing: .02em !important;
+    border-radius: 16px !important; font-size: 15px !important;
+    font-weight: 700 !important; padding: 13px !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 8px 28px rgba(58,123,213,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.3) !important;
+    letter-spacing: .03em !important;
+}
+.analyse-wrap .stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 36px rgba(58,123,213,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.3) !important;
 }
 
-/* ── Strip form chrome ── */
+/* ══ FORM ══ */
 [data-testid="stForm"] {
     border: none !important; padding: 0 !important;
     background: transparent !important; box-shadow: none !important;
 }
-
-/* ── Text input (invisible, inside card) ── */
 [data-testid="stTextInput"] input {
     background: transparent !important;
     border: none !important; outline: none !important;
-    color: #e0e6f0 !important;
+    color: #1a2a4a !important;
     padding: 10px 4px !important; font-size: 14px !important;
-    font-family: 'Nunito', sans-serif !important;
+    -webkit-text-fill-color: #1a2a4a !important;
 }
-[data-testid="stTextInput"] input::placeholder { color: rgba(160,170,200,0.38) !important; }
+[data-testid="stTextInput"] input::placeholder { color: rgba(60,100,160,0.45) !important; }
 [data-testid="stTextInput"] > div {
     background: transparent !important; border: none !important; box-shadow: none !important;
 }
 
-/* ── Audio input ── */
+/* ══ INPUT PILL ══ */
+div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {
+    background: rgba(255,255,255,0.55) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border-radius: 50px !important;
+    border: 1px solid rgba(255,255,255,0.8) !important;
+    padding: 2px 6px 2px 18px !important;
+    align-items: center !important;
+    box-shadow: 0 4px 28px rgba(80,130,255,0.14),
+                inset 0 1px 0 rgba(255,255,255,0.9) !important;
+    margin-top: 8px !important;
+    flex-wrap: nowrap !important;
+}
+[data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+}
+[data-testid="stHorizontalBlock"]::-webkit-scrollbar { display: none !important; }
+
+/* ══ AUDIO INPUT ══ */
 [data-testid="stAudioInput"] {
-    background: #1a1e38 !important;
-    border: 1px solid rgba(92,111,255,0.28) !important;
-    border-radius: 14px !important;
+    background: rgba(255,255,255,0.45) !important;
+    border: 1px solid rgba(255,255,255,0.7) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
 }
 [data-testid="stAudioInput"] button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
+    background: linear-gradient(135deg,#3a7bd5,#64a0ff) !important;
     border-radius: 50% !important;
-    box-shadow: 0 0 0 8px rgba(92,111,255,0.12) !important;
+    box-shadow: 0 0 0 8px rgba(58,123,213,0.12) !important;
 }
 
-/* ── File uploader ── */
+/* ══ FILE UPLOADER ══ */
 [data-testid="stFileUploader"] section {
-    background: #1a1e38 !important;
-    border: 2px dashed rgba(56,182,255,0.35) !important;
-    border-radius: 14px !important; cursor: pointer !important;
+    background: rgba(255,255,255,0.4) !important;
+    border: 2px dashed rgba(58,123,213,0.35) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
     transition: all .2s !important;
 }
 [data-testid="stFileUploader"] section:hover {
-    border-color: rgba(56,182,255,0.75) !important; background: #1e2344 !important;
+    background: rgba(255,255,255,0.65) !important;
+    border-color: rgba(58,123,213,0.7) !important;
 }
 [data-testid="stFileUploaderDropzoneInstructions"] span {
-    color: #38b6ff !important; font-size: 13px !important; font-weight: 700 !important;
+    color: #3a7bd5 !important; font-weight: 700 !important;
 }
 
-
-/* ── Camera input ── */
+/* ══ CAMERA INPUT ══ */
 [data-testid="stCameraInput"] {
-    background: rgba(56,182,255,0.05) !important;
-    border: 1.5px solid rgba(56,182,255,0.3) !important;
-    border-radius: 16px !important;
-    overflow: hidden !important;
+    background: rgba(255,255,255,0.4) !important;
+    border: 1.5px solid rgba(58,123,213,0.3) !important;
+    border-radius: 18px !important; overflow: hidden !important;
+    backdrop-filter: blur(12px) !important;
 }
 [data-testid="stCameraInput"] button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
-    color: #fff !important;
-    border-radius: 10px !important;
-    border: none !important;
+    background: linear-gradient(135deg,#3a7bd5,#64a0ff) !important;
+    color: #fff !important; border-radius: 10px !important; border: none !important;
 }
 
-/* ── Audio players ── */
-audio {
-    width: 100% !important; border-radius: 10px !important;
-    margin-top: 3px !important; height: 36px !important;
-    filter: invert(0) !important;
-}
-
-/* ── Image preview ── */
-[data-testid="stImage"] img {
-    max-height: 200px !important; max-width: 100% !important;
-    width: auto !important; border-radius: 14px !important;
-    object-fit: contain !important; display: block !important; margin: 4px auto !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
-}
-
-/* ── Alerts ── */
-[data-testid="stAlert"] {
-    background: #1e2138 !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-    border-radius: 12px !important; color: #c8d0e8 !important;
-}
-
-hr { border-color: rgba(255,255,255,0.05) !important; }
-[data-testid="stCaptionContainer"] p { color: rgba(160,175,210,0.45) !important; font-size: 11px !important; }
-/* ── Chat window container ── */
+/* ══ CHAT WINDOW CONTAINER ══ */
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg,#12152a 0%,#161929 100%) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 18px !important;
-    padding: 10px 6px !important;
+    background: rgba(255,255,255,0.38) !important;
+    backdrop-filter: blur(32px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+    border: 1px solid rgba(255,255,255,0.75) !important;
+    border-radius: 24px !important;
+    padding: 14px 8px !important;
+    box-shadow: 0 8px 40px rgba(80,130,255,0.12),
+                inset 0 1px 0 rgba(255,255,255,0.9) !important;
 }
 
+/* ══ AUDIO PLAYER ══ */
+audio {
+    width: 100% !important; border-radius: 12px !important;
+    margin-top: 3px !important; height: 36px !important;
+}
+
+/* ══ IMAGE ══ */
+[data-testid="stImage"] img {
+    max-height: 200px !important; border-radius: 16px !important;
+    box-shadow: 0 6px 24px rgba(80,130,255,0.2) !important;
+    border: 1px solid rgba(255,255,255,0.7) !important;
+}
+
+/* ══ ALERTS ══ */
+[data-testid="stAlert"] {
+    background: rgba(255,255,255,0.55) !important;
+    border: 1px solid rgba(255,255,255,0.75) !important;
+    border-radius: 14px !important; color: #1a3060 !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+hr { border-color: rgba(100,150,255,0.12) !important; }
+[data-testid="stCaptionContainer"] p { color: rgba(60,100,160,0.55) !important; font-size: 11px !important; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2e50; border-radius: 4px; }
-.block-container { max-width: 700px !important; padding: 20px 16px 60px !important; margin: 0 auto !important; }
-[data-testid="stSpinner"] p { color: #8899ff !important; }
+::-webkit-scrollbar-thumb { background: rgba(80,130,255,0.25); border-radius: 4px; }
+.block-container { max-width: 700px !important; padding: 20px 16px 70px !important; margin: 0 auto !important; }
+[data-testid="stSpinner"] p { color: #3a7bd5 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ── Chat bubble renderers ─────────────────────────────────────────────────────
 from datetime import datetime as _dt
-
-def _now():
-    return _dt.now().strftime("%I:%M %p")
+def _now(): return _dt.now().strftime("%I:%M %p")
 
 def user_bubble(text, voice_b64=None, ts=None):
     time_str = ts or ""
     st.markdown(f"""
     <div style='display:flex;justify-content:flex-end;align-items:flex-end;
         gap:8px;margin:10px 0 2px;padding:0 2px;'>
-        <div style='max-width:75%;'>
-            <div style='background:linear-gradient(135deg,#4f5fff 0%,#3ab0ff 100%);
-                color:#fff;border-radius:18px 18px 4px 18px;
-                padding:10px 14px;font-size:14px;line-height:1.65;
-                box-shadow:0 2px 12px rgba(79,95,255,0.35);word-wrap:break-word;'>
+        <div style='max-width:76%;'>
+            <div style='background:linear-gradient(135deg,rgba(58,123,213,0.88),rgba(100,160,255,0.82));
+                backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+                color:#fff;border-radius:20px 20px 5px 20px;
+                padding:11px 15px;font-size:14px;line-height:1.65;
+                box-shadow:0 4px 20px rgba(58,123,213,0.35),inset 0 1px 0 rgba(255,255,255,0.25);
+                border:1px solid rgba(255,255,255,0.3);word-wrap:break-word;'>
                 {text}
             </div>
-            <div style='font-size:10px;color:rgba(140,155,200,0.45);text-align:right;
-                margin-top:3px;padding-right:4px;font-family:JetBrains Mono,monospace;'>
-                {time_str} ✓✓
-            </div>
+            <div style='font-size:10px;color:rgba(58,100,180,0.55);text-align:right;
+                margin-top:4px;padding-right:4px;'>{time_str} ✓✓</div>
         </div>
-        <div style='width:32px;height:32px;border-radius:50%;
-            background:linear-gradient(135deg,#4f5fff,#3ab0ff);
-            display:flex;align-items:center;justify-content:center;
-            font-size:15px;flex-shrink:0;box-shadow:0 2px 8px rgba(79,95,255,0.3);'>
-            👤
-        </div>
+        <div style='width:34px;height:34px;border-radius:50%;
+            background:linear-gradient(135deg,rgba(58,123,213,0.8),rgba(100,160,255,0.8));
+            backdrop-filter:blur(10px);
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+            flex-shrink:0;border:1.5px solid rgba(255,255,255,0.6);
+            box-shadow:0 2px 12px rgba(58,123,213,0.3);'>👤</div>
     </div>
     """, unsafe_allow_html=True)
     if voice_b64:
         st.markdown(
-            f"<div style='display:flex;justify-content:flex-end;margin:0 40px 8px 0;'>"
-            f"<div style='width:72%;background:rgba(79,95,255,0.12);border-radius:10px;"
-            f"padding:6px 8px;border:1px solid rgba(79,95,255,0.2);'>"
-            f"<div style='font-size:9px;color:rgba(140,160,255,0.55);margin-bottom:3px;"
-            f"font-family:JetBrains Mono,monospace;letter-spacing:.1em;'>🎤 YOUR VOICE</div>"
+            f"<div style='display:flex;justify-content:flex-end;margin:0 42px 8px 0;'>"
+            f"<div style='width:72%;background:rgba(58,123,213,0.1);border-radius:12px;"
+            f"padding:6px 10px;border:1px solid rgba(58,123,213,0.2);"
+            f"backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);'>"
+            f"<div style='font-size:9px;color:rgba(58,123,213,0.7);margin-bottom:3px;font-weight:700;letter-spacing:.08em;'>🎤 YOUR VOICE</div>"
             f"<audio controls style='width:100%;height:32px;border-radius:8px;'>"
             f"<source src='data:audio/mp3;base64,{voice_b64}' type='audio/mp3'></audio>"
-            f"</div></div>",
-            unsafe_allow_html=True,
-        )
+            f"</div></div>", unsafe_allow_html=True)
 
 def ai_bubble(text, is_medical=False, audio_b64=None, ts=None, do_autoplay=False):
-    border = "rgba(56,182,255,0.2)" if is_medical else "rgba(255,255,255,0.06)"
-    glow   = "rgba(56,182,255,0.08)" if is_medical else "rgba(255,255,255,0.02)"
-    icon   = "🩺" if is_medical else "🫀"
-    label  = "Dr. AI" if is_medical else "AI Assistant"
+    icon  = "🩺" if is_medical else "🤖"
+    label = "Dr. AI" if is_medical else "AI Assistant"
     time_str = ts or ""
     st.markdown(f"""
     <div style='display:flex;justify-content:flex-start;align-items:flex-end;
         gap:8px;margin:10px 0 2px;padding:0 2px;'>
-        <div style='width:32px;height:32px;border-radius:50%;
-            background:#1e2240;border:1px solid {border};
-            display:flex;align-items:center;justify-content:center;
-            font-size:15px;flex-shrink:0;'>
-            {icon}
-        </div>
-        <div style='max-width:75%;'>
-            <div style='font-size:10px;color:rgba(140,160,200,0.5);
-                margin-bottom:4px;font-family:JetBrains Mono,monospace;
-                letter-spacing:.08em;'>{label}</div>
-            <div style='background:#1e2240;border:1px solid {border};
-                background:linear-gradient(135deg,#1e2240,#1a1e38);
-                color:#d8e0f0;border-radius:4px 18px 18px 18px;
-                padding:10px 14px;font-size:14px;line-height:1.65;
-                box-shadow:0 2px 12px rgba(0,0,0,0.25);word-wrap:break-word;'>
+        <div style='width:34px;height:34px;border-radius:50%;
+            background:rgba(255,255,255,0.6);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            display:flex;align-items:center;justify-content:center;font-size:16px;
+            flex-shrink:0;border:1.5px solid rgba(255,255,255,0.85);
+            box-shadow:0 2px 12px rgba(80,130,255,0.15);'>{icon}</div>
+        <div style='max-width:76%;'>
+            <div style='font-size:10px;color:rgba(58,100,180,0.6);margin-bottom:4px;
+                font-weight:700;letter-spacing:.05em;'>{label}</div>
+            <div style='background:rgba(255,255,255,0.58);
+                backdrop-filter:blur(28px) saturate(180%);
+                -webkit-backdrop-filter:blur(28px) saturate(180%);
+                color:#1a2a4a;border-radius:5px 20px 20px 20px;
+                padding:11px 15px;font-size:14px;line-height:1.65;
+                box-shadow:0 4px 24px rgba(80,130,255,0.1),inset 0 1px 0 rgba(255,255,255,0.95);
+                border:1px solid rgba(255,255,255,0.8);word-wrap:break-word;'>
                 {text}
             </div>
-            <div style='font-size:10px;color:rgba(140,155,200,0.4);
-                margin-top:3px;padding-left:4px;font-family:JetBrains Mono,monospace;'>
-                {time_str}
-            </div>
+            <div style='font-size:10px;color:rgba(58,100,180,0.5);margin-top:4px;
+                padding-left:4px;'>{time_str}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     if audio_b64:
-        _autoplay_attr = "autoplay" if do_autoplay else ""
+        _ap = "autoplay" if do_autoplay else ""
         st.markdown(
-            f"<div style='display:flex;justify-content:flex-start;margin:0 0 8px 40px;'>"
-            f"<div style='width:72%;background:rgba(56,182,255,0.08);border-radius:10px;"
-            f"padding:6px 8px;border:1px solid rgba(56,182,255,0.18);'>"
-            f"<div style='font-size:9px;color:rgba(56,182,255,0.55);margin-bottom:3px;"
-            f"font-family:JetBrains Mono,monospace;letter-spacing:.1em;'>🔊 DOCTOR RESPONSE</div>"
-            f"<audio {_autoplay_attr} controls style='width:100%;height:32px;border-radius:8px;'>"
+            f"<div style='display:flex;justify-content:flex-start;margin:0 0 8px 42px;'>"
+            f"<div style='width:72%;background:rgba(255,255,255,0.5);border-radius:12px;"
+            f"padding:6px 10px;border:1px solid rgba(255,255,255,0.8);"
+            f"backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'>"
+            f"<div style='font-size:9px;color:rgba(58,123,213,0.7);margin-bottom:3px;font-weight:700;letter-spacing:.08em;'>🔊 DOCTOR RESPONSE</div>"
+            f"<audio {_ap} controls style='width:100%;height:32px;border-radius:8px;'>"
             f"<source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>"
-            f"</div></div>",
-            unsafe_allow_html=True,
-        )
+            f"</div></div>", unsafe_allow_html=True)
 
 def image_bubble(img_b64):
     st.markdown(f"""
-    <div style='display:flex;justify-content:flex-end;margin:4px 40px 4px 0;'>
+    <div style='display:flex;justify-content:flex-end;margin:4px 42px 4px 0;'>
         <img src='data:image/jpeg;base64,{img_b64}'
-            style='max-height:180px;max-width:65%;border-radius:14px;
-            box-shadow:0 4px 20px rgba(0,0,0,0.4);object-fit:cover;
-            border:1px solid rgba(255,255,255,0.08);'/>
+            style='max-height:190px;max-width:65%;border-radius:18px;
+            box-shadow:0 6px 24px rgba(80,130,255,0.2);object-fit:cover;
+            border:1.5px solid rgba(255,255,255,0.7);'/>
     </div>
     """, unsafe_allow_html=True)
 
 def day_divider(label="Today"):
     st.markdown(f"""
     <div style='display:flex;align-items:center;gap:10px;margin:14px 0 8px;'>
-        <div style='flex:1;height:1px;background:rgba(255,255,255,0.06);'></div>
-        <div style='font-size:10px;color:rgba(140,155,200,0.4);
-            font-family:JetBrains Mono,monospace;letter-spacing:.12em;
-            background:#1a1d2e;padding:2px 10px;border-radius:20px;
-            border:1px solid rgba(255,255,255,0.06);'>{label}</div>
-        <div style='flex:1;height:1px;background:rgba(255,255,255,0.06);'></div>
+        <div style='flex:1;height:1px;background:rgba(80,130,255,0.15);'></div>
+        <div style='font-size:10px;color:rgba(58,100,180,0.55);font-weight:700;
+            background:rgba(255,255,255,0.5);padding:3px 12px;border-radius:20px;
+            border:1px solid rgba(255,255,255,0.8);
+            backdrop-filter:blur(10px);'>{label}</div>
+        <div style='flex:1;height:1px;background:rgba(80,130,255,0.15);'></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -412,15 +507,18 @@ CHAT_PROMPT = (
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-    <div style='text-align:center;padding:4px 0 16px;'>
-        <div style='font-size:44px;margin-bottom:8px;'>🫀</div>
-        <div style='font-family:Nunito,sans-serif;font-size:15px;font-weight:800;
-            color:#c8d0e8;'>AI Healthcare Assistant</div>
-        <div style='font-size:10px;color:rgba(160,175,210,0.4);margin-top:5px;
-            font-family:JetBrains Mono,monospace;letter-spacing:.1em;'>
+    <div style='text-align:center;padding:16px 0 20px;'>
+        <div style='width:64px;height:64px;border-radius:50%;
+            background:linear-gradient(135deg,rgba(58,123,213,0.85),rgba(100,160,255,0.8));
+            backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;
+            font-size:28px;margin:0 auto 12px;
+            border:1.5px solid rgba(255,255,255,0.7);
+            box-shadow:0 6px 24px rgba(58,123,213,0.3);'>🩺</div>
+        <div style='font-size:16px;font-weight:800;color:#1a3060;'>AI Healthcare</div>
+        <div style='font-size:11px;color:rgba(58,100,180,0.6);margin-top:4px;font-weight:500;'>
             v2.0 · M.Tech AI</div>
     </div>
-    <div style='height:1px;background:rgba(255,255,255,0.06);margin-bottom:18px;'></div>
+    <div style='height:1px;background:rgba(80,130,255,0.15);margin-bottom:18px;'></div>
     """, unsafe_allow_html=True)
 
     language   = st.radio("🌐 Language / ভাষা", ["English", "Bengali"], index=0)
@@ -448,20 +546,22 @@ with st.sidebar:
         bengali_voice_id = "bn-BD-NabanitaNeural"
 
     st.markdown("""
-    <div style='height:1px;background:rgba(255,255,255,0.06);margin:16px 0;'></div>
-    <div style='font-size:11px;color:rgba(160,175,210,0.4);letter-spacing:.12em;
-        text-transform:uppercase;font-family:JetBrains Mono,monospace;margin-bottom:8px;'>
-        Powered by</div>
-    <div style='font-size:13px;color:#a0aac8;line-height:2.1;'>
+    <div style='height:1px;background:rgba(80,130,255,0.15);margin:16px 0;'></div>
+    <div style='font-size:10px;color:rgba(58,100,180,0.55);letter-spacing:.12em;
+        text-transform:uppercase;font-weight:700;margin-bottom:10px;'>Powered by</div>
+    <div style='font-size:13px;color:#2a4a80;line-height:2.2;'>
         🧠 LLaMA-4 Scout Vision<br>
         🎙️ Groq Whisper Large v3<br>
         🔊 ElevenLabs / edge-tts / gTTS<br>
         🌐 Deep Translator
     </div>
-    <div style='height:1px;background:rgba(255,255,255,0.06);margin:16px 0;'></div>
-    <div style='font-size:12px;color:rgba(160,175,210,0.45);line-height:1.8;'>
-        <strong style='color:#c8d0e8;'>Raja Biswas</strong><br>
-        M.Tech (AI) · Clinical Decision Support System
+    <div style='height:1px;background:rgba(80,130,255,0.15);margin:16px 0;'></div>
+    <div style='background:rgba(255,255,255,0.5);border-radius:14px;padding:12px 14px;
+        border:1px solid rgba(255,255,255,0.8);
+        backdrop-filter:blur(16px);box-shadow:0 2px 12px rgba(80,130,255,0.1);'>
+        <div style='font-size:13px;font-weight:700;color:#1a3060;'>Raja Biswas</div>
+        <div style='font-size:11px;color:rgba(58,100,180,0.65);margin-top:2px;'>
+            M.Tech (AI) · Healthcare AI</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -470,38 +570,45 @@ with st.sidebar:
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='text-align:center;padding:18px 0 14px;'>
-    <div style='font-size:58px;margin-bottom:10px;
-        filter:drop-shadow(0 0 24px rgba(92,111,255,0.6));'>🫀</div>
-    <div style='font-family:Nunito,sans-serif;font-size:clamp(17px,4vw,24px);
-        font-weight:800;color:#e0e6f0;margin-bottom:3px;'>
+<div style='text-align:center;padding:28px 0 20px;'>
+    <div style='display:inline-flex;align-items:center;justify-content:center;
+        width:78px;height:78px;border-radius:50%;
+        background:linear-gradient(135deg,rgba(58,123,213,0.82),rgba(100,160,255,0.78));
+        backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+        font-size:36px;margin-bottom:16px;
+        border:2px solid rgba(255,255,255,0.7);
+        box-shadow:0 8px 32px rgba(58,123,213,0.35),inset 0 1px 0 rgba(255,255,255,0.4);'>🩺</div>
+    <div style='font-size:clamp(17px,4vw,25px);font-weight:800;
+        color:#0d1f40;margin-bottom:4px;letter-spacing:-.02em;'>
         AI Based Conversational Assistant
     </div>
-    <div style='font-family:Nunito,sans-serif;font-size:clamp(13px,3vw,17px);
-        font-weight:700;color:#5c6fff;margin-bottom:12px;'>
+    <div style='font-size:clamp(13px,3vw,16px);font-weight:600;
+        color:#3a7bd5;margin-bottom:14px;'>
         For Healthcare and Support
     </div>
-    <div style='margin:6px 0 14px;'>
-        <div style='font-family:Nunito,sans-serif;font-size:15px;
-            font-weight:800;color:#c8d0e8;letter-spacing:.02em;'>
-            Raja Biswas
-        </div>
-        <div style='font-family:JetBrains Mono,monospace;font-size:11px;
-            color:rgba(140,160,220,0.5);letter-spacing:.12em;
-            text-transform:uppercase;margin-top:3px;'>
+    <div style='margin:8px 0 18px;'>
+        <div style='font-size:15px;font-weight:700;color:#1a3060;'>Raja Biswas</div>
+        <div style='font-size:11px;color:rgba(58,100,180,0.6);font-weight:600;
+            letter-spacing:.1em;text-transform:uppercase;margin-top:3px;'>
             M.Tech · Artificial Intelligence
         </div>
     </div>
     <div style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
-        <span style='background:#252840;border:1px solid rgba(92,111,255,0.25);
-            color:#8899ff;font-size:11px;padding:3px 12px;border-radius:20px;
-            font-family:JetBrains Mono,monospace;'>● LIVE</span>
-        <span style='background:#252840;border:1px solid rgba(56,182,255,0.2);
-            color:#38b6ff;font-size:11px;padding:3px 12px;border-radius:20px;
-            font-family:JetBrains Mono,monospace;'>Vision + Voice</span>
-        <span style='background:#252840;border:1px solid rgba(255,100,100,0.18);
-            color:#ff8080;font-size:11px;padding:3px 12px;border-radius:20px;
-            font-family:JetBrains Mono,monospace;'>Educational Only</span>
+        <span style='background:rgba(255,255,255,0.55);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid rgba(255,255,255,0.8);
+            color:#1a7a5e;font-size:11px;padding:5px 16px;border-radius:20px;
+            font-weight:700;box-shadow:0 2px 10px rgba(80,130,255,0.12);'>● LIVE</span>
+        <span style='background:rgba(255,255,255,0.55);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid rgba(255,255,255,0.8);
+            color:#3a7bd5;font-size:11px;padding:5px 16px;border-radius:20px;
+            font-weight:700;box-shadow:0 2px 10px rgba(80,130,255,0.12);'>Vision + Voice</span>
+        <span style='background:rgba(255,255,255,0.55);
+            backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+            border:1px solid rgba(255,255,255,0.8);
+            color:#cc4444;font-size:11px;padding:5px 16px;border-radius:20px;
+            font-weight:700;box-shadow:0 2px 10px rgba(80,130,255,0.12);'>Educational Only</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -509,8 +616,8 @@ st.markdown("""
 
 # ── Quick actions ─────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='font-size:10px;color:rgba(160,175,210,0.38);letter-spacing:.14em;
-    text-transform:uppercase;font-family:JetBrains Mono,monospace;
+<div style='font-size:10px;color:rgba(58,100,180,0.55);letter-spacing:.14em;
+    text-transform:uppercase;font-weight:700;
     margin:4px 0 10px;text-align:center;'>Quick Actions</div>
 """, unsafe_allow_html=True)
 
@@ -585,7 +692,7 @@ with st.container():
         st.markdown("""
         <div style='text-align:center;padding:48px 20px;'>
             <div style='font-size:38px;margin-bottom:12px;opacity:.18;'>💬</div>
-            <div style='font-size:13px;color:rgba(140,160,200,0.26);line-height:1.9;'>
+            <div style='font-size:13px;color:rgba(58,100,180,0.4);line-height:1.9;'>
                 Hello! I'm your AI healthcare assistant.<br>
                 Type a question · 🎤 record symptoms · 🖼️ upload an image
             </div>
@@ -606,10 +713,11 @@ if st.session_state.autoplay_b64:
 # ── Voice panel ───────────────────────────────────────────────────────────────
 if st.session_state.show_voice:
     st.markdown("""
-    <div style='background:#1e2240;border-radius:16px;padding:12px 16px 8px;
-        border:1px solid rgba(92,111,255,0.35);margin-bottom:8px;
-        box-shadow:0 8px 32px rgba(92,111,255,0.2);'>
-        <div style='font-size:10px;color:#8899ff;letter-spacing:.15em;
+    <div style='background:rgba(255,255,255,0.45);border-radius:16px;padding:12px 16px 8px;
+        border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;
+        backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+        box-shadow:0 4px 24px rgba(80,130,255,0.1);'>
+        <div style='font-size:10px;color:rgba(58,100,180,0.7);letter-spacing:.15em;
             text-transform:uppercase;font-family:JetBrains Mono,monospace;
             margin-bottom:6px;'>🎤 Tap the mic below to start recording</div>
     </div>
@@ -624,7 +732,7 @@ if st.session_state.show_voice:
         _raw_audio.seek(0)  # reset so it can be read again later
     if st.session_state.stored_audio:
         st.markdown(
-            "<div style='font-size:12px;color:#22c55e;padding:4px 2px 6px;'>"
+            "<div style='font-size:12px;color:#3a7bd5;font-weight:700;padding:4px 2px 6px;'>"
             "✓ Voice captured — tap 🔬 Analyse Now</div>",
             unsafe_allow_html=True,
         )
@@ -641,10 +749,11 @@ if st.session_state.show_voice and st.session_state.stored_audio:
 # ── Image panel ───────────────────────────────────────────────────────────────
 if st.session_state.show_image:
     st.markdown("""
-    <div style='background:#1e2240;border-radius:16px;padding:12px 16px 8px;
-        border:1px solid rgba(56,182,255,0.3);margin-bottom:8px;
-        box-shadow:0 8px 32px rgba(56,182,255,0.15);'>
-        <div style='font-size:10px;color:#38b6ff;letter-spacing:.15em;
+    <div style='background:rgba(255,255,255,0.45);border-radius:16px;padding:12px 16px 8px;
+        border:1px solid rgba(255,255,255,0.8);margin-bottom:8px;
+        backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+        box-shadow:0 4px 24px rgba(80,130,255,0.1);'>
+        <div style='font-size:10px;color:rgba(58,100,180,0.7);letter-spacing:.15em;
             text-transform:uppercase;font-family:JetBrains Mono,monospace;
             margin-bottom:6px;'>🖼️ Click below to select your medical image</div>
     </div>
@@ -667,10 +776,10 @@ if st.session_state.show_image:
 # ── Camera panel ─────────────────────────────────────────────────────────────
 if st.session_state.show_camera:
     st.markdown("""
-    <div style='background:rgba(56,182,255,0.06);border-radius:16px;
-        padding:10px 14px 6px;border:1px solid rgba(56,182,255,0.25);
-        margin-bottom:8px;'>
-        <div style='font-size:10px;color:#38b6ff;letter-spacing:.15em;
+    <div style='background:rgba(255,255,255,0.45);border-radius:16px;
+        padding:10px 14px 6px;border:1px solid rgba(255,255,255,0.8);
+        margin-bottom:8px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);'>
+        <div style='font-size:10px;color:rgba(58,100,180,0.7);letter-spacing:.15em;
             text-transform:uppercase;font-family:JetBrains Mono,monospace;
             margin-bottom:6px;'>📷 Point camera at the affected area & capture</div>
     </div>
@@ -699,13 +808,15 @@ st.markdown(f"""
 <style>
 /* Make the 3 cols sit flush inside a pill */
 div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {{
-    background: #22263d;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     border-radius: 50px;
-    border: 1px solid rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.8);
     padding: 2px 6px 2px 18px;
     align-items: center;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
-    margin-top: 6px;
+    box-shadow: 0 4px 28px rgba(80,130,255,0.14),inset 0 1px 0 rgba(255,255,255,0.9);
+    margin-top: 8px;
 }}
 </style>
 <span id='pill-anchor' style='display:none'></span>
@@ -778,7 +889,7 @@ with clr_col:
 # ── Hint when panels are open ─────────────────────────────────────────────────
 if st.session_state.show_voice or st.session_state.show_image:
     st.markdown("""
-    <div style='font-size:10px;color:rgba(140,160,255,0.4);text-align:center;
+    <div style='font-size:10px;color:rgba(58,100,180,0.5);text-align:center;
         font-family:JetBrains Mono,monospace;letter-spacing:.1em;
         text-transform:uppercase;margin:4px 0 2px;'>
         ↑ ready · tap 🔬 Analyse to process
