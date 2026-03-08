@@ -1,0 +1,9 @@
+streamlit
+python-dotenv
+groq
+gtts
+elevenlabs
+speechrecognition
+pydub
+ffmpeg-python
+deep-translator
