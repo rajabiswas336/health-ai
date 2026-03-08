@@ -71,50 +71,26 @@ html, body, [class*="css"] {
     color: #1a2340 !important;
 }
 .stApp { background: #f0f4f8 !important; min-height: 100vh !important; }
-/* Hide top black bar completely */
+/* Hide top black bar */
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
-header[data-testid="stHeader"] { display: none !important; }
-[data-testid="stToolbar"] { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 [data-testid="stStatusWidget"] { display: none !important; }
-.stDeployButton { display: none !important; }
+/* Hide toolbar deploy buttons only, not the header itself */
+[data-testid="stToolbar"] { visibility: hidden !important; }
 
-/* ════ SIDEBAR TOGGLE — force visible over everything ════ */
+/* ════ SIDEBAR TOGGLE — working version ════ */
 [data-testid="collapsedControl"] {
     visibility: visible !important;
     display: flex !important;
     opacity: 1 !important;
     pointer-events: all !important;
     z-index: 9999999 !important;
-    position: fixed !important;
-    top: calc(50vh - 30px) !important;
-    left: 0 !important;
     background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
-    border-radius: 0 20px 20px 0 !important;
-    padding: 12px 10px 12px 6px !important;
-    box-shadow: 4px 0 20px rgba(45,184,138,0.45) !important;
-    cursor: pointer !important;
-    min-width: 28px !important;
-    min-height: 56px !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: none !important;
+    border-radius: 0 10px 10px 0 !important;
+    box-shadow: 2px 2px 8px rgba(45,184,138,0.4) !important;
 }
-[data-testid="collapsedControl"] > * {
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: all !important;
-}
-[data-testid="collapsedControl"] svg {
-    fill: #ffffff !important;
-    stroke: #ffffff !important;
-    width: 18px !important;
-    height: 18px !important;
-}
-[data-testid="collapsedControl"] span {
-    color: #ffffff !important;
-}
+[data-testid="collapsedControl"] svg { fill: white !important; }
 [data-testid="stSidebarCollapseButton"] {
     visibility: visible !important;
     pointer-events: all !important;
@@ -550,34 +526,6 @@ with st.sidebar:
 
 
 
-
-# ── Floating sidebar toggle button (JS-powered, always visible) ───────────────
-st.markdown("""
-<button onclick="
-    var sidebar = window.parent.document.querySelector('[data-testid=stSidebar]');
-    var btn = window.parent.document.querySelector('[data-testid=collapsedControl]');
-    if(btn){ btn.click(); }
-" style="
-    position: fixed;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 9999999;
-    background: linear-gradient(135deg,#2db88a,#1a9e70);
-    border: none;
-    border-radius: 0 18px 18px 0;
-    padding: 16px 10px;
-    cursor: pointer;
-    box-shadow: 4px 0 20px rgba(45,184,138,0.5);
-    font-size: 18px;
-    line-height: 1;
-    color: white;
-    min-height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-">☰</button>
-""", unsafe_allow_html=True)
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
