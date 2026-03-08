@@ -50,6 +50,7 @@ defaults = {
     "messages":       [],
     "show_voice":     False,
     "show_image":     False,
+    "show_camera":    False,
     "input_key":      0,
     "autoplay_b64":   None,   # holds ONE audio to autoplay after rerun
     "stored_audio":   None,   # persists recorded audio bytes across reruns
@@ -221,6 +222,21 @@ html, body, [class*="css"] {
 }
 [data-testid="stFileUploaderDropzoneInstructions"] span {
     color: #38b6ff !important; font-size: 13px !important; font-weight: 700 !important;
+}
+
+
+/* ── Camera input ── */
+[data-testid="stCameraInput"] {
+    background: rgba(56,182,255,0.05) !important;
+    border: 1.5px solid rgba(56,182,255,0.3) !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+}
+[data-testid="stCameraInput"] button {
+    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    border: none !important;
 }
 
 /* ── Audio players ── */
@@ -648,6 +664,24 @@ if st.session_state.show_image:
         st.image(io.BytesIO(st.session_state.stored_image), width=220,
                  caption=f"✓ {st.session_state.stored_img_name} — tap 🔬 Analyse Now")
 
+# ── Camera panel ─────────────────────────────────────────────────────────────
+if st.session_state.show_camera:
+    st.markdown("""
+    <div style='background:rgba(56,182,255,0.06);border-radius:16px;
+        padding:10px 14px 6px;border:1px solid rgba(56,182,255,0.25);
+        margin-bottom:8px;'>
+        <div style='font-size:10px;color:#38b6ff;letter-spacing:.15em;
+            text-transform:uppercase;font-family:JetBrains Mono,monospace;
+            margin-bottom:6px;'>📷 Point camera at the affected area & capture</div>
+    </div>
+    """, unsafe_allow_html=True)
+    _cam = st.camera_input(label="Capture", label_visibility="collapsed", key="cam_capture")
+    if _cam is not None:
+        st.session_state.stored_image    = _cam.read()
+        st.session_state.stored_img_name = "camera_capture.jpg"
+        st.session_state.show_camera     = False
+        st.rerun()
+
 # Expose image_file from stored bytes
 image_file = None
 if st.session_state.stored_image:
@@ -655,7 +689,7 @@ if st.session_state.stored_image:
 
 # ── Pill input bar — layout: [ text ... ] [ 🖼️ ] [ 🎤 ] [ 🗑️ ] ────────────────
 # Uses a 3-col layout: wide text col | icon col (img+mic) | clear col
-txt_col, icons_col, clr_col = st.columns([8, 2, 1], gap="small")
+txt_col, icons_col, clr_col = st.columns([7, 3, 1], gap="small")
 
 mic_active = st.session_state.show_voice
 img_active = st.session_state.show_image
@@ -694,21 +728,33 @@ with txt_col:
             st.markdown("</div>", unsafe_allow_html=True)
 
 with icons_col:
-    ic1, ic2 = st.columns(2, gap="small")
+    ic1, ic2, ic3 = st.columns(3, gap="small")
     with ic1:
         img_class = "active-btn toolbar-btn" if img_active else "toolbar-btn pill-icon"
         st.markdown(f"<div class='{img_class}'>", unsafe_allow_html=True)
         if st.button("⊞", help="Upload image", key="img_btn"):
-            st.session_state.show_image = not st.session_state.show_image
+            st.session_state.show_image  = not st.session_state.show_image
+            st.session_state.show_camera = False
             if st.session_state.show_image:
                 st.session_state.show_voice = False
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     with ic2:
+        cam_active = st.session_state.show_camera
+        cam_class  = "active-btn toolbar-btn" if cam_active else "toolbar-btn pill-icon"
+        st.markdown(f"<div class='{cam_class}'>", unsafe_allow_html=True)
+        if st.button("📷", help="Live camera capture", key="cam_btn"):
+            st.session_state.show_camera = not st.session_state.show_camera
+            st.session_state.show_image  = False
+            st.session_state.show_voice  = False
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+    with ic3:
         mic_class = "active-btn toolbar-btn" if mic_active else "toolbar-btn pill-icon"
         st.markdown(f"<div class='{mic_class}'>", unsafe_allow_html=True)
         if st.button("🎙", help="Record voice", key="mic_btn"):
-            st.session_state.show_voice = not st.session_state.show_voice
+            st.session_state.show_voice  = not st.session_state.show_voice
+            st.session_state.show_camera = False
             if st.session_state.show_voice:
                 st.session_state.show_image = False
             st.rerun()
@@ -724,6 +770,7 @@ with clr_col:
         st.session_state.stored_img_name = None
         st.session_state.show_voice      = False
         st.session_state.show_image      = False
+        st.session_state.show_camera     = False
         st.session_state.input_key      += 1
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
@@ -739,7 +786,7 @@ if st.session_state.show_voice or st.session_state.show_image:
     """, unsafe_allow_html=True)
 
 # ── Analyse button (only when voice or image panel is open) ──────────────────
-if st.session_state.show_voice or st.session_state.show_image:
+if st.session_state.show_voice or st.session_state.show_image or st.session_state.stored_image:
     st.markdown("<div class='analyse-wrap' style='margin-top:4px;'>",
                 unsafe_allow_html=True)
     analyse_clicked = st.button(
