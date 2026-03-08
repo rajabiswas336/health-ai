@@ -51,6 +51,10 @@ defaults = {
     "show_voice":      False,
     "show_image":      False,
     "show_camera":     False,
+    "show_sidebar":    False,
+    "language":        "English",
+    "tts_engine":      "ElevenLabs (High Quality)",
+    "bengali_voice":   "bn-BD-NabanitaNeural",
     "input_key":       0,
     "autoplay_b64":    None,
     "stored_audio":    None,
@@ -468,36 +472,153 @@ CHAT_PROMPT = (
 )
 
 
-# ── Settings expander (replaces sidebar — works on all devices) ───────────────
-with st.expander("⚙️ Settings — Language & Voice", expanded=False):
-    _col1, _col2 = st.columns(2)
-    with _col1:
-        language = st.radio("🌐 Language", ["English", "Bengali"], index=0)
-    with _col2:
+# ── Custom sidebar panel — toggle with ☰ button ──────────────────────────────
+# Floating ☰ toggle button (always visible, teal, left edge)
+st.markdown("""
+<style>
+.sidebar-toggle-wrap {
+    position: fixed !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 999999 !important;
+}
+.sidebar-toggle-wrap .stButton > button {
+    background: linear-gradient(135deg,#2db88a,#1a9e70) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 0 16px 16px 0 !important;
+    padding: 18px 10px !important;
+    font-size: 20px !important;
+    min-height: 60px !important;
+    min-width: 36px !important;
+    width: 36px !important;
+    box-shadow: 4px 0 16px rgba(45,184,138,0.45) !important;
+    line-height: 1 !important;
+    font-weight: 400 !important;
+}
+.sidebar-toggle-wrap .stButton > button:hover {
+    background: linear-gradient(135deg,#25a87d,#158060) !important;
+    transform: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("<div class='sidebar-toggle-wrap'>", unsafe_allow_html=True)
+if st.button("☰", key="sidebar_toggle_btn"):
+    st.session_state.show_sidebar = not st.session_state.show_sidebar
+    st.rerun()
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Custom sidebar panel — slides in from left when show_sidebar=True
+if st.session_state.show_sidebar:
+    st.markdown("""
+    <style>
+    .custom-sidebar {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 280px !important;
+        height: 100vh !important;
+        background: #ffffff !important;
+        border-right: 2px solid #d0ede4 !important;
+        box-shadow: 6px 0 32px rgba(0,100,80,0.15) !important;
+        z-index: 99999 !important;
+        overflow-y: auto !important;
+        padding: 0 0 40px 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown("""
+        <div class='custom-sidebar'>
+        <div style='background:linear-gradient(135deg,#2db88a,#1a9e70);
+            padding:24px 20px 20px;'>
+            <div style='font-size:32px;text-align:center;margin-bottom:8px;'>🩺</div>
+            <div style='font-size:16px;font-weight:800;color:#fff;text-align:center;'>
+                AI Healthcare</div>
+            <div style='font-size:11px;color:rgba(255,255,255,0.75);text-align:center;
+                margin-top:4px;'>v2.0 · M.Tech AI · Raja Biswas</div>
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Settings inside a white card below
+    st.markdown("""
+    <div style='position:fixed;top:140px;left:0;width:280px;
+        z-index:99999;padding:0 16px;box-sizing:border-box;'>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Actual Streamlit widgets rendered in a box
+    with st.container():
+        st.markdown("""
+        <div style='background:#ffffff;border:1.5px solid #d0ede4;
+            border-radius:16px;padding:16px;margin-bottom:12px;
+            box-shadow:0 2px 12px rgba(45,184,138,0.08);'>
+            <div style='font-size:11px;color:#7aaa9a;font-weight:700;
+                letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;'>
+            ⚙️ Settings</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        language = st.radio(
+            "🌐 Language / ভাষা",
+            ["English", "Bengali"],
+            index=0 if st.session_state.language == "English" else 1,
+            key="lang_radio",
+        )
+        st.session_state.language = language
+
         tts_engine = st.selectbox(
             "🔊 Voice Engine",
             ["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"],
-            index=0 if language == "English" else 1,
+            index=["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"].index(
+                st.session_state.tts_engine
+            ),
+            key="tts_select",
         )
-    if language == "Bengali":
-        bn_voice = st.selectbox(
-            "🗣️ Bengali Voice",
-            [
+        st.session_state.tts_engine = tts_engine
+
+        if language == "Bengali":
+            _voices = [
                 "bn-BD-NabanitaNeural · Female (BD)",
                 "bn-BD-PradeepNeural · Male (BD)",
                 "bn-IN-TanishaaNeural · Female (IN)",
                 "bn-IN-BashkarNeural · Male (IN)",
-            ],
-            index=0,
-        )
-        bengali_voice_id = bn_voice.split(" ·")[0].strip()
-    else:
-        bengali_voice_id = "bn-BD-NabanitaNeural"
-    st.markdown("""
-    <div style='font-size:12px;color:#7aaa9a;padding-top:6px;'>
-    🧠 LLaMA-4 Scout · 🎙️ Groq Whisper · 🔊 ElevenLabs/edge-tts · 
-    <strong>Raja Biswas</strong> · M.Tech (AI)
-    </div>""", unsafe_allow_html=True)
+            ]
+            bn_voice = st.selectbox("🗣️ Bengali Voice", _voices, index=0, key="bn_voice_select")
+            bengali_voice_id = bn_voice.split(" ·")[0].strip()
+            st.session_state.bengali_voice = bengali_voice_id
+        else:
+            bengali_voice_id = st.session_state.bengali_voice
+
+        st.markdown("""
+        <div style='height:1px;background:#e0eae4;margin:14px 0;'></div>
+        <div style='font-size:12px;color:#5a8a7a;line-height:2;'>
+            🧠 LLaMA-4 Scout Vision<br>
+            🎙️ Groq Whisper Large v3<br>
+            🔊 ElevenLabs / edge-tts / gTTS<br>
+            🌐 Deep Translator
+        </div>
+        <div style='height:1px;background:#e0eae4;margin:14px 0;'></div>
+        <div style='background:#f0faf6;border-radius:12px;padding:10px 12px;
+            border:1px solid #c8e8d8;'>
+            <div style='font-size:13px;font-weight:700;color:#1a5040;'>Raja Biswas</div>
+            <div style='font-size:11px;color:#7aaa9a;'>M.Tech (AI) · Healthcare AI</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+        if st.button("✕  Close Settings", key="close_sidebar_btn", use_container_width=True):
+            st.session_state.show_sidebar = False
+            st.rerun()
+
+else:
+    # Use persisted values when sidebar is closed
+    language         = st.session_state.language
+    tts_engine       = st.session_state.tts_engine
+    bengali_voice_id = st.session_state.bengali_voice
 
 
 
