@@ -16,7 +16,20 @@ from voice_of_the_doctor import text_to_speech_with_gtts, text_to_speech_with_el
 from language_utils import translate_to_english, translate_to_bengali, get_whisper_language_code
 
 load_dotenv()
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+def _get_secret(key: str) -> str:
+    """Read from Streamlit secrets (cloud) or .env (local)."""
+    try:
+        return st.secrets[key]
+    except Exception:
+        return os.environ.get(key, "")
+
+GROQ_API_KEY      = _get_secret("GROQ_API_KEY")
+ELEVENLABS_API_KEY = _get_secret("ELEVENLABS_API_KEY")
+
+# Pass keys to submodules via environment so they pick them up
+os.environ["GROQ_API_KEY"]       = GROQ_API_KEY
+os.environ["ELEVENLABS_API_KEY"] = ELEVENLABS_API_KEY
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -818,11 +831,16 @@ if analyse_clicked:
             use_elevenlabs = (
                 tts_engine.startswith("ElevenLabs")
                 and language == "English"
-                and os.environ.get("ELEVENLABS_API_KEY")
+                and bool(ELEVENLABS_API_KEY)
             )
             if use_elevenlabs:
-                # English — ElevenLabs highest quality
-                text_to_speech_with_elevenlabs(doctor_response_out, tts_path, autoplay=False)
+                # English — ElevenLabs highest quality, fallback to gTTS
+                try:
+                    text_to_speech_with_elevenlabs(doctor_response_out, tts_path, autoplay=False)
+                except Exception as e:
+                    st.warning(f"⚠️ ElevenLabs failed ({e.__class__.__name__}), using gTTS instead.")
+                    text_to_speech_with_gtts(doctor_response_out, tts_path,
+                                             language="en", autoplay=False)
             elif language == "Bengali" and tts_engine.startswith("gTTS"):
                 # Bengali — gTTS fallback (if user explicitly chose it)
                 text_to_speech_with_gtts(doctor_response_out, tts_path,

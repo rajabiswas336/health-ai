@@ -116,7 +116,11 @@ def text_to_speech_with_gtts(input_text, output_filepath,
 
 # ── ElevenLabs (English, highest quality) ────────────────────────────────────
 def text_to_speech_with_elevenlabs(input_text, output_filepath, autoplay=False):
-    client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+    # Re-read key at call time so Streamlit Cloud secrets are picked up
+    _key = os.environ.get("ELEVENLABS_API_KEY", ELEVENLABS_API_KEY)
+    if not _key:
+        raise ValueError("ELEVENLABS_API_KEY not set")
+    client = ElevenLabs(api_key=_key)
     audio = client.text_to_speech.convert(
         voice_id=ELEVENLABS_VOICE_ID,
         model_id="eleven_turbo_v2",
