@@ -40,6 +40,11 @@ ELEVENLABS_API_KEY = _get_secret("ELEVENLABS_API_KEY")
 os.environ["GROQ_API_KEY"]       = GROQ_API_KEY
 os.environ["ELEVENLABS_API_KEY"] = ELEVENLABS_API_KEY
 
+# ── Key validation — show warning on cloud if missing ─────────────────────────
+if not GROQ_API_KEY:
+    st.error("🔑 GROQ_API_KEY not found. Go to Manage App → Secrets and add it.", icon="🚨")
+    st.stop()
+
 # ── Session state defaults ────────────────────────────────────────────────────
 defaults = {
     "messages":       [],
