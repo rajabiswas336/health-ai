@@ -220,7 +220,7 @@ section[data-testid="stMain"] > div { padding-top:0 !important; margin-top:0 !im
     border-radius: 50px !important;
     border: 2px solid #2563eb !important;
     box-shadow: 0 4px 20px rgba(37,99,235,0.18) !important;
-    padding: 5px 8px 5px 18px !important;
+    padding: 6px 10px !important;
     align-items: center !important;
     backdrop-filter: blur(8px) !important;
     gap: 4px !important;
@@ -444,6 +444,25 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
     width:42px !important;
     height:42px !important;
     font-size:16px !important;
+}
+
+}
+            /* MOBILE INPUT BUTTON ALIGNMENT */
+@media (max-width:768px){
+
+[data-testid="stForm"] [data-testid="stHorizontalBlock"]{
+    flex-wrap:wrap !important;
+    justify-content:center !important;
+    gap:8px !important;
+}
+
+[data-testid="stFormSubmitButton"]{
+    flex:0 0 auto !important;
+}
+
+[data-testid="stFormSubmitButton"] button{
+    width:42px !important;
+    height:42px !important;
 }
 
 }
