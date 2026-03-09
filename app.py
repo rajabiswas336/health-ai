@@ -941,7 +941,7 @@ img_active = st.session_state.show_image
 # ── Input bar ─────────────────────────────────────────────────────────────────
 # Single form wrapping ALL columns — pill styled via global CSS
 with st.form(key="chat_form", clear_on_submit=True):
-    txt_col, send_col, ic1_col, ic2_col, ic3_col, clr_col = st.columns([9, 1, 1, 1, 1, 1], gap="small")
+    txt_col, send_col = st.columns([10,1])
     with txt_col:
         text_query = st.text_input(
             label="msg",
@@ -951,14 +951,19 @@ with st.form(key="chat_form", clear_on_submit=True):
         )
     with send_col:
         send_clicked = st.form_submit_button("➤")
-    with ic1_col:
-        img_pressed = st.form_submit_button("⊞", help="Upload image")
-    with ic2_col:
-        cam_pressed = st.form_submit_button("📷", help="Camera")
-    with ic3_col:
-        mic_pressed = st.form_submit_button("🎙", help="Record voice")
-    with clr_col:
-        clr_pressed = st.form_submit_button("🗑", help="Clear chat")
+    icon1, icon2, icon3, icon4 = st.columns(4)
+
+with icon1:
+    img_pressed = st.form_submit_button("⊞", help="Upload image")
+
+with icon2:
+    cam_pressed = st.form_submit_button("📷", help="Camera")
+
+with icon3:
+    mic_pressed = st.form_submit_button("🎙", help="Record voice")
+
+with icon4:
+    clr_pressed = st.form_submit_button("🗑", help="Clear chat")
 
 # ── JS injector via components (actually executes, unlike st.markdown script) ──
 import streamlit.components.v1 as _components
