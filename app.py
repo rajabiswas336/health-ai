@@ -390,6 +390,40 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
     }
 
 }
+            /* MOBILE INPUT BAR FIX */
+@media (max-width: 768px){
+
+    /* center input bar */
+    [data-testid="stForm"]{
+        width:100% !important;
+        max-width:100% !important;
+        margin-left:auto !important;
+        margin-right:auto !important;
+    }
+
+    /* fix pill input container */
+    [data-testid="stForm"] > div > [data-testid="stHorizontalBlock"]{
+        width:100% !important;
+        padding:6px 10px 6px 12px !important;
+        border-radius:40px !important;
+    }
+
+}
+            /* FIX LEFT BUTTON COLUMN ON MOBILE */
+@media (max-width: 768px){
+
+[data-testid="stForm"] [data-testid="column"]{
+    display:flex !important;
+    justify-content:center !important;
+    align-items:center !important;
+}
+
+[data-testid="stFormSubmitButton"] > button{
+    min-width:38px !important;
+    min-height:38px !important;
+}
+
+}
 
 </style>""", unsafe_allow_html=True)
 
