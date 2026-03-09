@@ -215,16 +215,13 @@ section[data-testid="stMain"] > div { padding-top:0 !important; margin-top:0 !im
 }
 
 /* ── THE PILL BAR — visible border, frosted glass ── */
-[data-testid="stForm"] > div > [data-testid="stHorizontalBlock"] {
-    background: rgba(255,255,255,0.72) !important;
-    border-radius: 50px !important;
-    border: 2px solid #2563eb !important;
-    box-shadow: 0 4px 20px rgba(37,99,235,0.18) !important;
-    padding: 6px 10px !important;
+[data-testid="stForm"] > div > [data-testid="stHorizontalBlock"]{
+    background: rgba(255,255,255,0.75) !important;
+    border-radius: 30px !important;
+    border: 1px solid rgba(37,99,235,0.35) !important;
+    padding: 4px 8px !important;
+    box-shadow: 0 2px 10px rgba(37,99,235,0.15) !important;
     align-items: center !important;
-    backdrop-filter: blur(8px) !important;
-    gap: 4px !important;
-    margin: 0 !important;
 }
 
 /* ── Text input inside pill — glassmorphism style ── */
@@ -466,6 +463,21 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
 }
 
 }
+            @media (max-width:768px){
+
+[data-testid="stFormSubmitButton"] button{
+    width:38px !important;
+    height:38px !important;
+    font-size:16px !important;
+    border-radius:10px !important;
+}
+
+[data-testid="stForm"]{
+    width:100% !important;
+}
+
+}
+            
 </style>""", unsafe_allow_html=True)
 
 
@@ -960,30 +972,31 @@ img_active = st.session_state.show_image
 # ── Input bar ─────────────────────────────────────────────────────────────────
 # Single form wrapping ALL columns — pill styled via global CSS
 with st.form(key="chat_form", clear_on_submit=True):
-    txt_col, send_col = st.columns([10,1])
-    with txt_col:
+
+    col1, col2, col3, col4, col5, col6 = st.columns([8,1,1,1,1,1])
+
+    with col1:
         text_query = st.text_input(
             label="msg",
             placeholder="Ask me anything...",
             label_visibility="collapsed",
             key=f"chat_input_{st.session_state.input_key}",
         )
-    with send_col:
+
+    with col2:
         send_clicked = st.form_submit_button("➤")
-    icon1, icon2, icon3, icon4 = st.columns(4)
 
-with icon1:
-    img_pressed = st.form_submit_button("⊞", help="Upload image")
+    with col3:
+        img_pressed = st.form_submit_button("⊞")
 
-with icon2:
-    cam_pressed = st.form_submit_button("📷", help="Camera")
+    with col4:
+        cam_pressed = st.form_submit_button("📷")
 
-with icon3:
-    mic_pressed = st.form_submit_button("🎙", help="Record voice")
+    with col5:
+        mic_pressed = st.form_submit_button("🎙")
 
-with icon4:
-    clr_pressed = st.form_submit_button("🗑", help="Clear chat")
-
+    with col6:
+        clr_pressed = st.form_submit_button("🗑")
 # ── JS injector via components (actually executes, unlike st.markdown script) ──
 import streamlit.components.v1 as _components
 _components.html("""
