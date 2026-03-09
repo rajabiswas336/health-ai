@@ -14,15 +14,19 @@ from brain_of_the_doctor import encode_image, analyze_image_with_query
 from voice_of_the_patient import transcribe_with_groq
 from voice_of_the_doctor import text_to_speech_with_gtts, text_to_speech_with_elevenlabs, text_to_speech_with_edge
 from language_utils import translate_to_english, translate_to_bengali, get_whisper_language_code
+import base64
 
+def get_base64_image(path):
+    with open(path, "rb") as img:
+        return base64.b64encode(img.read()).decode()
 load_dotenv()
-
+icon_base64 = get_base64_image("icon.png")
 # ── Page config — MUST be first Streamlit call ────────────────────────────────
 st.set_page_config(
     page_title="AI Healthcare Assistant",
-    page_icon="🫀",
+    page_icon="icon.png",
     layout="centered",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── API Keys — read AFTER set_page_config so st.secrets is available ──────────
@@ -62,225 +66,370 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
-st.markdown("""
+st.markdown("""           
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Nunito', sans-serif !important;
-    color: #e0e6f0 !important;
-}
-.stApp { background: #1a1d2e !important; min-height: 100vh !important; }
-#MainMenu, footer { visibility: hidden; }
+html, body, [class*="css"] { font-family: 'Nunito', sans-serif !important; }
 
+/* ── App background ── */
+.stApp { 
+    background: #bfdbf2 !important;
+    background: linear-gradient(
+        180deg,
+        rgba(191, 219, 242, 1) 0%,
+        rgba(93, 146, 199, 1) 75%,
+        rgba(57, 95, 128, 1) 100%
+    ) !important;
+    min-height: 100vh !important;
+}
+
+/* Keep header for sidebar toggle but hide visual space */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+header[data-testid="stHeader"] > div {
+    padding-top: 0px !important;
+}
+.stMainBlockContainer { padding-top:0 !important; margin-top:0 !important; }
+section[data-testid="stMain"] { padding-top:0 !important; margin-top:0 !important; }
+section[data-testid="stMain"] > div { padding-top:0 !important; margin-top:0 !important; }
+
+/* ── Main container — centered, max width, good vertical breathing room ── */
+.block-container { 
+    max-width: 680px !important; 
+    padding: 60px 24px 40px !important; 
+    margin: 0 auto !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] { background:#5b82b5 !important; border-right:1px solid rgba(255,255,255,0.2) !important; }
+[data-testid="stSidebarContent"] { padding:24px 18px !important; }
+
+/* Sidebar text white but NOT buttons */
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label { color:white !important; }
+
+/* ── collapsedControl: the button shown when sidebar is CLOSED ── */
+/* Sidebar open button */
 [data-testid="collapsedControl"] {
-    visibility: visible !important; display: flex !important;
-    opacity: 1 !important; pointer-events: all !important;
-    z-index: 999999 !important; background: #2e3250 !important;
+    visibility: visible !important;
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    z-index: 999999 !important;
+
+    background: #2563eb !important;   /* OUTSIDE COLOR */
     border-radius: 0 10px 10px 0 !important;
 }
-[data-testid="stSidebarCollapseButton"] {
-    visibility: visible !important; pointer-events: all !important;
-}
-[data-testid="stSidebar"] {
-    background: #1e2236 !important;
-    border-right: 1px solid rgba(255,255,255,0.06) !important;
-}
-[data-testid="stSidebar"] * { color: #c8d0e8 !important; }
-[data-testid="stSidebarContent"] { padding: 24px 18px !important; }
-[data-testid="stRadio"] label {
-    background: #252840 !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-    border-radius: 12px !important; padding: 10px 14px !important;
-    margin: 4px 0 !important; transition: background .2s !important;
-}
-[data-testid="stRadio"] label:hover { background: #2e3258 !important; }
-[data-testid="stSelectbox"] > div > div {
-    background: #252840 !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 12px !important; color: #c8d0e8 !important;
+
+/* actual button element */
+[data-testid="collapsedControl"] button {
+    background: #2563eb !important;   /* FIX */
+    border: none !important;
 }
 
-/* ── Quick action grid buttons ── */
+/* icon color */
+[data-testid="collapsedControl"] svg {
+    color: white !important;
+    fill: white !important;
+}
+/* ── Sidebar header close button: shown when sidebar is OPEN ── */
+[data-testid="stSidebarHeader"] {
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+}
+[data-testid="stSidebarHeader"] button {
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    pointer-events:all !important;
+    color:#ffffff !important;
+    background:#2563eb !important;   /* NEW */
+    border-radius:6px !important;
+}
+[data-testid="stSidebarHeader"] button svg { color:white !important; fill:white !important; }
+[data-testid="stRadio"] label { background:rgba(255,255,255,0.15) !important; border:1px solid rgba(255,255,255,0.2) !important; border-radius:12px !important; padding:10px 14px !important; margin:4px 0 !important; }
+[data-testid="stRadio"] label:hover { background:rgba(255,255,255,0.25) !important; }
+[data-testid="stSelectbox"] > div > div { background:rgba(255,255,255,0.15) !important; border:1px solid rgba(255,255,255,0.2) !important; border-radius:12px !important; color:white !important; }
+
+/* ── Quick action buttons — professional pill style ── */
 .stButton > button {
-    background: #22263d !important; color: #b0bcd8 !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 14px !important; font-weight: 700 !important;
-    font-size: 12px !important; padding: 12px 6px !important;
-    width: 100% !important; transition: all .2s !important;
-    line-height: 1.5 !important;
+    background: rgba(255,255,255,0.45) !important;
+    color: #1e3a8a !important;
+    border: 1px solid rgba(37,99,235,0.2) !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    
+    width: 100% !important;
+    transition: all .2s ease !important;
+    line-height: 1.2 !important;
+    backdrop-filter: blur(6px) !important;
+    box-shadow: 0 1px 4px rgba(37,99,235,0.08), inset 0 1px 0 rgba(255,255,255,0.6) !important;
 }
 .stButton > button:hover {
-    background: #2a3060 !important; transform: translateY(-2px) !important;
-    border-color: rgba(92,111,255,0.4) !important; color: #e0e6f0 !important;
+    background: rgba(37,99,235,0.12) !important;
+    border-color: rgba(37,99,235,0.45) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.18) !important;
+    color: #1e40af !important;
 }
 
-/* ── Toolbar icon buttons ── */
-.toolbar-btn .stButton > button {
-    background: transparent !important;
+/* ── ALL form submit buttons — blue round style ── */
+[data-testid="stFormSubmitButton"] > button {
+    background: linear-gradient(135deg,#2563eb,#38bdf8) !important;
     border: none !important;
     border-radius: 50% !important;
-    padding: 6px !important;
-    font-size: 20px !important;
-    font-weight: 400 !important;
-    min-height: 38px !important;
-    min-width: 38px !important;
+    min-height: 40px !important;
+    min-width: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 17px !important;
+    color: white !important;
+    padding: 0 !important;
+    box-shadow: 0 3px 10px rgba(37,99,235,0.35) !important;
+    font-weight: 600 !important;
+    transition: all .2s !important;
     line-height: 1 !important;
-    color: #8899bb !important;
-    transition: color .15s, background .15s !important;
 }
-.toolbar-btn .stButton > button:hover {
-    background: rgba(255,255,255,0.07) !important;
-    transform: none !important;
-    color: #e0e6f0 !important;
+[data-testid="stFormSubmitButton"] > button:hover {
+    background: linear-gradient(135deg,#1d4ed8,#0ea5e9) !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 5px 16px rgba(37,99,235,0.5) !important;
 }
 
-/* ── Pill icon style (inside pill bar) ── */
-.pill-icon .stButton > button {
-    background: rgba(255,255,255,0.06) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 50% !important;
-    min-height: 36px !important;
-    min-width: 36px !important;
-    font-size: 18px !important;
-    color: #99aacc !important;
-}
-.pill-icon .stButton > button:hover {
-    background: rgba(255,255,255,0.12) !important;
-    color: #fff !important;
+/* ── Strip form chrome completely ── */
+[data-testid="stForm"] {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 8px 0 0 0 !important;
 }
 
-/* ── Active toolbar button (panel open) ── */
-.active-btn .stButton > button {
-    background: rgba(92,111,255,0.22) !important;
-    border: 1px solid rgba(92,111,255,0.5) !important;
-    border-radius: 50% !important;
-    color: #8899ff !important;
+/* ── THE PILL BAR — visible border, frosted glass ── */
+[data-testid="stForm"] > div > [data-testid="stHorizontalBlock"] {
+    background: rgba(255,255,255,0.72) !important;
+    border-radius: 50px !important;
+    border: 2px solid #2563eb !important;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.18) !important;
+    padding: 5px 8px 5px 18px !important;
+    align-items: center !important;
+    backdrop-filter: blur(8px) !important;
+    gap: 4px !important;
+    margin: 0 !important;
 }
 
-/* ── Send button (hidden — Enter key used instead) ── */
-.send-btn .stButton > button,
-.send-btn [data-testid="stFormSubmitButton"] > button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
-    color: #fff !important; border: none !important;
-    border-radius: 50% !important; padding: 6px !important;
-    font-size: 18px !important; font-weight: 800 !important;
-    min-height: 38px !important; min-width: 38px !important;
-    box-shadow: 0 4px 14px rgba(92,111,255,0.45) !important;
+/* ── Text input inside pill — glassmorphism style ── */
+[data-testid="stForm"] [data-testid="stTextInput"] input {
+    background: linear-gradient(135deg,rgb(218,232,247),rgb(214,229,247)) !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #2563eb !important;
+    font-size: 15px !important;
+    padding: 8px 12px !important;
+    border-radius: 1000px !important;
+    font-family: 'Nunito', sans-serif !important;
 }
+[data-testid="stForm"] [data-testid="stTextInput"] > div,
+[data-testid="stForm"] [data-testid="stTextInput"] > div > div {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-testid="stForm"] [data-testid="stTextInput"] input::placeholder { color: #9ebcd9 !important; font-style: italic !important; }
+
+/* ── Columns inside form pill — vertically centered ── */
+[data-testid="stForm"] [data-testid="column"] {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+}
+
+/* ── Chat window — transparent, no background ── */
+.chat-box {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Kill Streamlit wrapper padding above/below chat-box and form when chat is empty */
+[data-testid="stVerticalBlock"] > [data-testid="element-container"]:has(> div.chat-box) {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-testid="stVerticalBlock"] > [data-testid="element-container"] {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+/* Remove default gap Streamlit adds between stVerticalBlock children */
+[data-testid="stVerticalBlock"] { gap: 0 !important; }
+/* But restore gap inside sidebar so its contents don't collapse */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+[data-testid="stSidebarContent"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
 
 /* ── Analyse button ── */
 .analyse-wrap .stButton > button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
+    background: linear-gradient(135deg,#2563eb,#38bdf8) !important;
     color: #fff !important; border: none !important;
     border-radius: 14px !important; font-size: 14px !important;
     font-weight: 800 !important; padding: 13px !important;
-    box-shadow: 0 6px 22px rgba(92,111,255,0.35) !important;
-    letter-spacing: .02em !important;
+    box-shadow: 0 6px 22px rgba(37,99,235,0.35) !important;
 }
 
-/* ── Strip form chrome ── */
-[data-testid="stForm"] {
-    border: none !important; padding: 0 !important;
-    background: transparent !important; box-shadow: none !important;
-}
-
-/* ── Text input (invisible, inside card) ── */
-[data-testid="stTextInput"] input {
-    background: transparent !important;
-    border: none !important; outline: none !important;
-    color: #e0e6f0 !important;
-    padding: 10px 4px !important; font-size: 14px !important;
-    font-family: 'Nunito', sans-serif !important;
-}
-[data-testid="stTextInput"] input::placeholder { color: rgba(160,170,200,0.38) !important; }
-[data-testid="stTextInput"] > div {
-    background: transparent !important; border: none !important; box-shadow: none !important;
-}
-
-/* ── Audio input ── */
-[data-testid="stAudioInput"] {
-    background: #1a1e38 !important;
-    border: 1px solid rgba(92,111,255,0.28) !important;
-    border-radius: 14px !important;
-}
-[data-testid="stAudioInput"] button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
-    border-radius: 50% !important;
-    box-shadow: 0 0 0 8px rgba(92,111,255,0.12) !important;
-}
-
-/* ── File uploader ── */
-[data-testid="stFileUploader"] section {
-    background: #1a1e38 !important;
-    border: 2px dashed rgba(56,182,255,0.35) !important;
-    border-radius: 14px !important; cursor: pointer !important;
-    transition: all .2s !important;
-}
-[data-testid="stFileUploader"] section:hover {
-    border-color: rgba(56,182,255,0.75) !important; background: #1e2344 !important;
-}
-[data-testid="stFileUploaderDropzoneInstructions"] span {
-    color: #38b6ff !important; font-size: 13px !important; font-weight: 700 !important;
-}
-
-
-/* ── Camera input ── */
-[data-testid="stCameraInput"] {
-    background: rgba(56,182,255,0.05) !important;
-    border: 1.5px solid rgba(56,182,255,0.3) !important;
-    border-radius: 16px !important;
-    overflow: hidden !important;
-}
-[data-testid="stCameraInput"] button {
-    background: linear-gradient(135deg,#5c6fff,#38b6ff) !important;
-    color: #fff !important;
-    border-radius: 10px !important;
-    border: none !important;
-}
+/* ── Audio / file / camera inputs ── */
+[data-testid="stAudioInput"] { background:#1a1e38 !important; border:1px solid rgba(92,111,255,0.28) !important; border-radius:14px !important; }
+[data-testid="stAudioInput"] button { background:linear-gradient(135deg,#5c6fff,#38b6ff) !important; border-radius:50% !important; }
+[data-testid="stFileUploader"] section { background:#1a1e38 !important; border:2px dashed rgba(56,182,255,0.35) !important; border-radius:14px !important; }
+[data-testid="stCameraInput"] { background:rgba(56,182,255,0.05) !important; border:1.5px solid rgba(56,182,255,0.3) !important; border-radius:16px !important; overflow:hidden !important; }
+[data-testid="stCameraInput"] button { background:linear-gradient(135deg,#5c6fff,#38b6ff) !important; color:#fff !important; border-radius:10px !important; border:none !important; }
 
 /* ── Audio players ── */
-audio {
-    width: 100% !important; border-radius: 10px !important;
-    margin-top: 3px !important; height: 36px !important;
-    filter: invert(0) !important;
-}
+audio { width:100% !important; border-radius:10px !important; margin-top:3px !important; height:36px !important; }
 
-/* ── Image preview ── */
-[data-testid="stImage"] img {
-    max-height: 200px !important; max-width: 100% !important;
-    width: auto !important; border-radius: 14px !important;
-    object-fit: contain !important; display: block !important; margin: 4px auto !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
-}
+/* ── Misc ── */
+[data-testid="stImage"] img { max-height:200px !important; max-width:100% !important; width:auto !important; border-radius:14px !important; object-fit:contain !important; display:block !important; margin:4px auto !important; box-shadow:0 4px 20px rgba(0,0,0,0.4) !important; }
+[data-testid="stAlert"] { background:#1e2138 !important; border:1px solid rgba(255,255,255,0.07) !important; border-radius:12px !important; color:#c8d0e8 !important; }
+hr { border-color:rgba(255,255,255,0.05) !important; }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#2a2e50; border-radius:4px; }
 
-/* ── Alerts ── */
-[data-testid="stAlert"] {
-    background: #1e2138 !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-    border-radius: 12px !important; color: #c8d0e8 !important;
-}
+/* ── LIVE dot pulse ── */
+.live-dot { width:8px; height:8px; background:#22c55e; border-radius:50%; display:inline-block; margin-right:6px; animation:pulseLive 1.6s infinite; }
+@keyframes pulseLive { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.7);} 70%{box-shadow:0 0 0 8px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);} }
 
-hr { border-color: rgba(255,255,255,0.05) !important; }
-[data-testid="stCaptionContainer"] p { color: rgba(160,175,210,0.45) !important; font-size: 11px !important; }
-/* ── Chat window container ── */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg,#12152a 0%,#161929 100%) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 18px !important;
-    padding: 10px 6px !important;
-}
+/* ── Dark theme overrides (applied via JS to <body class="dark-mode">) ── */
+body.dark-mode .stApp { background: linear-gradient(180deg,#0f172a,#1e293b,#0f2744) !important; }
+body.dark-mode [data-testid="stSidebar"] { background:#0f172a !important; border-right:1px solid rgba(255,255,255,0.07) !important; }
+body.dark-mode .block-container * { color:#e2e8f0 !important; }
+body.dark-mode .stButton > button { background:rgba(30,41,59,0.8) !important; color:#93c5fd !important; border-color:rgba(99,148,235,0.3) !important; box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05) !important; }
+body.dark-mode .stButton > button:hover { background:rgba(37,99,235,0.25) !important; color:#bfdbfe !important; }
+body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input { background:linear-gradient(135deg,#1e2d45,#162035) !important; color:#93c5fd !important; }
+body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeholder { color:#4a6a9a !important; }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2e50; border-radius: 4px; }
-.block-container { max-width: 700px !important; padding: 20px 16px 60px !important; margin: 0 auto !important; }
-[data-testid="stSpinner"] p { color: #8899ff !important; }
-</style>
+/* ── Theme toggle button styles ── */
+#theme-toggle-button {
+  font-size: 11px;
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  display: inline-block;
+  width: 7em;
+  cursor: pointer;
+  z-index: 999999;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.18));
+}
+#toggle { opacity:0; width:0; height:0; }
+#container, #patches, #stars, #button, #sun, #moon, #cloud {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 0.25s;
+}
+#toggle:checked + svg #container { fill: #2b4360; }
+#toggle:checked + svg #button { transform: translate(28px, 2.333px); }
+#sun { opacity: 1; }
+#toggle:checked + svg #sun { opacity: 0; }
+#moon { opacity: 0; }
+#toggle:checked + svg #moon { opacity: 1; }
+#cloud { opacity: 1; }
+#toggle:checked + svg #cloud { opacity: 0; }
+#stars { opacity: 0; }
+#toggle:checked + svg #stars { opacity: 1; }
+/* ── Collapse gap between quick actions and input bar ── */
+.stMainBlockContainer .block-container > div > div { gap: 0 !important; }
+.stMainBlockContainer [data-testid="stVerticalBlock"] > div:empty { display:none !important; height:0 !important; margin:0 !important; padding:0 !important; }
+.stMainBlockContainer [data-testid="element-container"]:has(.chat-box:empty) { margin:0 !important; padding:0 !important; height:0 !important; }
+
+</style>""", unsafe_allow_html=True)
+
+
+# ── Theme toggle button ────────────────────────────────────────────────────────
+st.markdown("""
+<label id="theme-toggle-button" title="Toggle dark / light mode">
+  <input type="checkbox" id="toggle">
+  <svg viewBox="0 0 69.667 44" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(3.5 3.5)" data-name="Component 15 – 1" id="Component_15_1">
+      <g filter="url(#container)" transform="matrix(1, 0, 0, 1, -3.5, -3.5)">
+        <rect fill="#83cbd8" transform="translate(3.5 3.5)" rx="17.5" height="35" width="60.667" data-name="container" id="container"></rect>
+      </g>
+      <g transform="translate(2.333 2.333)" id="button">
+        <g data-name="sun" id="sun">
+          <g filter="url(#sun-outer)" transform="matrix(1, 0, 0, 1, -5.83, -5.83)">
+            <circle fill="#f8e664" transform="translate(5.83 5.83)" r="15.167" cy="15.167" cx="15.167" data-name="sun-outer" id="sun-outer-2"></circle>
+          </g>
+          <g filter="url(#sun)" transform="matrix(1, 0, 0, 1, -5.83, -5.83)">
+            <path fill="rgba(246,254,247,0.29)" transform="translate(9.33 9.33)" d="M11.667,0A11.667,11.667,0,1,1,0,11.667,11.667,11.667,0,0,1,11.667,0Z" data-name="sun" id="sun-3"></path>
+          </g>
+          <circle fill="#fcf4b9" transform="translate(8.167 8.167)" r="7" cy="7" cx="7" id="sun-inner"></circle>
+        </g>
+        <g data-name="moon" id="moon">
+          <g filter="url(#moon)" transform="matrix(1, 0, 0, 1, -31.5, -5.83)">
+            <circle fill="#cce6ee" transform="translate(31.5 5.83)" r="15.167" cy="15.167" cx="15.167" data-name="moon" id="moon-3"></circle>
+          </g>
+          <g fill="#a6cad0" transform="translate(-24.415 -1.009)" id="patches">
+            <circle transform="translate(43.009 4.496)" r="2" cy="2" cx="2"></circle>
+            <circle transform="translate(39.366 17.952)" r="2" cy="2" cx="2" data-name="patch"></circle>
+            <circle transform="translate(33.016 8.044)" r="1" cy="1" cx="1" data-name="patch"></circle>
+            <circle transform="translate(51.081 18.888)" r="1" cy="1" cx="1" data-name="patch"></circle>
+            <circle transform="translate(33.016 22.503)" r="1" cy="1" cx="1" data-name="patch"></circle>
+            <circle transform="translate(50.081 10.53)" r="1.5" cy="1.5" cx="1.5" data-name="patch"></circle>
+          </g>
+        </g>
+      </g>
+      <g filter="url(#cloud)" transform="matrix(1, 0, 0, 1, -3.5, -3.5)">
+        <path fill="#fff" transform="translate(-3466.47 -160.94)" d="M3512.81,173.815a4.463,4.463,0,0,1,2.243.62.95.95,0,0,1,.72-1.281,4.852,4.852,0,0,1,2.623.519c.034.02-.5-1.968.281-2.716a2.117,2.117,0,0,1,2.829-.274,1.821,1.821,0,0,1,.854,1.858c.063.037,2.594-.049,3.285,1.273s-.865,2.544-.807,2.626a12.192,12.192,0,0,1,2.278.892c.553.448,1.106,1.992-1.62,2.927a7.742,7.742,0,0,1-3.762-.3c-1.28-.49-1.181-2.65-1.137-2.624s-1.417,2.2-2.623,2.2a4.172,4.172,0,0,1-2.394-1.206,3.825,3.825,0,0,1-2.771.774c-3.429-.46-2.333-3.267-2.2-3.55A3.721,3.721,0,0,1,3512.81,173.815Z" data-name="cloud" id="cloud"></path>
+      </g>
+      <g fill="#def8ff" transform="translate(3.585 1.325)" id="stars">
+        <path transform="matrix(-1, 0.017, -0.017, -1, 24.231, 3.055)" d="M.774,0,.566.559,0,.539.458.933.25,1.492l.485-.361.458.394L1.024.953,1.509.592.943.572Z"></path>
+        <path transform="matrix(-0.777, 0.629, -0.629, -0.777, 23.185, 12.358)" d="M1.341.529.836.472.736,0,.505.46,0,.4.4.729l-.231.46L.605.932l.4.326L.9.786Z" data-name="star"></path>
+        <path transform="matrix(0.438, 0.899, -0.899, 0.438, 23.177, 29.735)" d="M.015,1.065.475.9l.285.365L.766.772l.46-.164L.745.494.751,0,.481.407,0,.293.285.658Z" data-name="star"></path>
+        <path transform="translate(12.677 0.388) rotate(104)" d="M1.161,1.6,1.059,1,1.574.722.962.607.86,0,.613.572,0,.457.446.881.2,1.454l.516-.274Z" data-name="star"></path>
+        <path transform="matrix(-0.07, 0.998, -0.998, -0.07, 11.066, 15.457)" d="M.873,1.648l.114-.62L1.579.945,1.03.62,1.144,0,.706.464.157.139.438.7,0,1.167l.592-.083Z" data-name="star"></path>
+        <path transform="translate(8.326 28.061) rotate(11)" d="M.593,0,.638.724,0,.982l.7.211.045.724.36-.64.7.211L1.342.935,1.7.294,1.063.552Z" data-name="star"></path>
+        <path transform="translate(5.012 5.962) rotate(172)" d="M.816,0,.5.455,0,.311.323.767l-.312.455.516-.215.323.456L.827.911,1.343.7.839.552Z" data-name="star"></path>
+        <path transform="translate(2.218 14.616) rotate(169)" d="M1.261,0,.774.571.114.3.487.967,0,1.538.728,1.32l.372.662.047-.749.728-.218L1.215.749Z" data-name="star"></path>
+      </g>
+    </g>
+  </svg>
+</label>
+
+<script>
+(function() {
+    const toggle = document.getElementById('toggle');
+    if (!toggle) return;
+    // Restore saved preference
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+        toggle.checked = true;
+        document.body.classList.add('dark-mode');
+        window.parent.document.body.classList.add('dark-mode');
+    }
+    toggle.addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('dark-mode');
+            window.parent.document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            window.parent.document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+    });
+})();
+</script>
 """, unsafe_allow_html=True)
 
 
-# ── Chat bubble renderers ─────────────────────────────────────────────────────
 from datetime import datetime as _dt
 
 def _now():
@@ -469,39 +618,36 @@ with st.sidebar:
 
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style='text-align:center;padding:18px 0 14px;'>
-    <div style='font-size:58px;margin-bottom:10px;
-        filter:drop-shadow(0 0 24px rgba(92,111,255,0.6));'>🫀</div>
-    <div style='font-family:Nunito,sans-serif;font-size:clamp(17px,4vw,24px);
-        font-weight:800;color:#e0e6f0;margin-bottom:3px;'>
+
+st.markdown(f"""
+<div style='text-align:center; padding:40px 0 20px;'>
+    <div style='font-family:"Times New Roman", serif;font-size:clamp(28px,5vw,40px);
+        font-weight:700;color:#1e3a8a;margin-bottom:4px;letter-spacing:-0.01em;'>
         AI Based Conversational Assistant
-    </div>
-    <div style='font-family:Nunito,sans-serif;font-size:clamp(13px,3vw,17px);
-        font-weight:700;color:#5c6fff;margin-bottom:12px;'>
+</div>
+
+<div style='font-family:"Times New Roman", serif;font-size:clamp(13px,3vw,16px);
+        font-weight:600;color:#2563eb;margin-bottom:14px;'>
         For Healthcare and Support
+</div>
+    <div style='margin-bottom:10px;'>
+        <img src="data:image/png;base64,{icon_base64}" width="56" style="filter:drop-shadow(0 3px 8px rgba(0,0,0,0.15));">
     </div>
-    <div style='margin:6px 0 14px;'>
+    <div style='margin:0 0 12px;'>
         <div style='font-family:Nunito,sans-serif;font-size:15px;
-            font-weight:800;color:#c8d0e8;letter-spacing:.02em;'>
+            font-weight:800;color:#1e3a8a;letter-spacing:.02em;'>
             Raja Biswas
         </div>
-        <div style='font-family:JetBrains Mono,monospace;font-size:11px;
-            color:rgba(140,160,220,0.5);letter-spacing:.12em;
-            text-transform:uppercase;margin-top:3px;'>
+        <div style='font-family:JetBrains Mono,monospace;font-size:10px;
+            color:#2563eb;letter-spacing:.14em;
+            text-transform:uppercase;margin-top:2px;'>
             M.Tech · Artificial Intelligence
         </div>
     </div>
     <div style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
-        <span style='background:#252840;border:1px solid rgba(92,111,255,0.25);
-            color:#8899ff;font-size:11px;padding:3px 12px;border-radius:20px;
-            font-family:JetBrains Mono,monospace;'>● LIVE</span>
-        <span style='background:#252840;border:1px solid rgba(56,182,255,0.2);
-            color:#38b6ff;font-size:11px;padding:3px 12px;border-radius:20px;
-            font-family:JetBrains Mono,monospace;'>Vision + Voice</span>
-        <span style='background:#252840;border:1px solid rgba(255,100,100,0.18);
-            color:#ff8080;font-size:11px;padding:3px 12px;border-radius:20px;
-            font-family:JetBrains Mono,monospace;'>Educational Only</span>
+        <span style='display:inline-flex;align-items:center;gap:5px;background:#e0f2fe;border:1px solid #7dd3fc;color:#0369a1;font-size:11px;padding:4px 12px;border-radius:20px;font-family:JetBrains Mono,monospace;'><span class="live-dot"></span>LIVE</span>
+        <span style='display:inline-flex;align-items:center;background:#e6f6ff;border:1px solid #7dd3fc;color:#0284c7;font-size:11px;padding:4px 12px;border-radius:20px;font-family:JetBrains Mono,monospace;'>Vision + Voice</span>
+        <span style='display:inline-flex;align-items:center;background:#fff1f2;border:1px solid #fca5a5;color:#b91c1c;font-size:11px;padding:4px 12px;border-radius:20px;font-family:JetBrains Mono,monospace;'>Educational Only</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -509,55 +655,69 @@ st.markdown("""
 
 # ── Quick actions ─────────────────────────────────────────────────────────────
 st.markdown("""
-<div style='font-size:10px;color:rgba(160,175,210,0.38);letter-spacing:.14em;
+<div style='font-size:10px;color:rgba(100,130,180,0.5);letter-spacing:.14em;
     text-transform:uppercase;font-family:JetBrains Mono,monospace;
-    margin:4px 0 10px;text-align:center;'>Quick Actions</div>
+    margin:2px 0 10px;text-align:center;'>Quick Actions</div>
+<style>
+/* Equal-size, tight quick action buttons */
+[data-testid="stHorizontalBlock"]:not([data-testid="stForm"] [data-testid="stHorizontalBlock"]) {
+    gap: 6px !important;
+    justify-content: center !important;
+}
+[data-testid="stHorizontalBlock"]:not([data-testid="stForm"] [data-testid="stHorizontalBlock"]) > div {
+    padding: 0 !important;
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+}
+[data-testid="stHorizontalBlock"]:not([data-testid="stForm"] [data-testid="stHorizontalBlock"]) .stButton,
+[data-testid="stHorizontalBlock"]:not([data-testid="stForm"] [data-testid="stHorizontalBlock"]) .stButton > button {
+    width: 100% !important;
+    min-height: 40px !important;
+    height: auto !important;
+    font-size: 13px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    padding: 8px 6px !important;
+}
+/* Center the form (input bar) */
+[data-testid="stForm"] {
+    max-width: 680px !important;
+    margin: 8px auto 0 !important;
+    width: 100% !important;
+}
+</style>
 """, unsafe_allow_html=True)
 
-c1,c2,c3,c4,c5,c6 = st.columns(6)
+c1,c2,c3,c4,c5,c6 = st.columns([1,1,1,1,1,1])
 with c1:
-    if st.button("🎤\nVoice"):
+    if st.button("Voice", use_container_width=True):
         st.session_state.show_voice = True; st.rerun()
 with c2:
-    if st.button("🖼️\nImage"):
+    if st.button("Image", use_container_width=True):
         st.session_state.show_image = True; st.rerun()
 with c3:
-    if st.button("🩺\nSkin"):
+    if st.button("Skin", use_container_width=True):
         st.session_state.show_voice = True
         st.session_state.show_image = True; st.rerun()
 with c4:
-    if st.button("🫁\nX-Ray"):
+    if st.button("Radiology", use_container_width=True):
         st.session_state.show_image = True; st.rerun()
 with c5:
-    if st.button("🌐\nবাংলা"):
+    if st.button("বাংলা", use_container_width=True):
         st.session_state.show_voice = True; st.rerun()
 with c6:
-    if st.button("💊\nAsk"):
+    if st.button("Ask", use_container_width=True):
         pass
-
-st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ── CHAT WINDOW ──────────────────────────────════════════════════════════════
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Style the chat container via CSS targeting the next sibling block
-st.markdown("""
-<style>
-div[data-testid="stVerticalBlock"]:has(> div[data-testid="stVerticalBlock"] > div > div[data-testid="stMarkdownContainer"] > div.chat-anchor) {
-    background: linear-gradient(180deg,#12152a 0%,#161929 100%) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 18px !important;
-    padding: 14px !important;
-    min-height: 300px !important;
-}
-</style>
-<div class="chat-anchor" style="display:none"></div>
-""", unsafe_allow_html=True)
-
-with st.container():
-    if st.session_state.messages:
+if st.session_state.messages:
+    st.markdown("<div class='chat-box'>", unsafe_allow_html=True)
+    with st.container():
         # Find last assistant message with audio for autoplay
         _last_audio_idx = -1
         for _i, _m in enumerate(st.session_state.messages):
@@ -581,18 +741,7 @@ with st.container():
                           audio_b64=msg.get("audio_b64"),
                           ts=msg.get("ts",""),
                           do_autoplay=_do_ap)
-    else:
-        st.markdown("""
-        <div style='text-align:center;padding:48px 20px;'>
-            <div style='font-size:38px;margin-bottom:12px;opacity:.18;'>💬</div>
-            <div style='font-size:13px;color:rgba(140,160,200,0.26);line-height:1.9;'>
-                Hello! I'm your AI healthcare assistant.<br>
-                Type a question · 🎤 record symptoms · 🖼️ upload an image
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# (status bar removed)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Consume autoplay flag after render so it only plays once
 if st.session_state.autoplay_b64:
@@ -688,92 +837,145 @@ if st.session_state.stored_image:
     image_file = io.BytesIO(st.session_state.stored_image)
 
 # ── Pill input bar — layout: [ text ... ] [ 🖼️ ] [ 🎤 ] [ 🗑️ ] ────────────────
-# Uses a 3-col layout: wide text col | icon col (img+mic) | clear col
-txt_col, icons_col, clr_col = st.columns([7, 3, 1], gap="small")
-
 mic_active = st.session_state.show_voice
 img_active = st.session_state.show_image
 
-# Pill wrapper — visually surrounds text + icons together
-st.markdown(f"""
-<style>
-/* Make the 3 cols sit flush inside a pill */
-div[data-testid="stHorizontalBlock"]:has(#pill-anchor) {{
-    background: #22263d;
-    border-radius: 50px;
-    border: 1px solid rgba(255,255,255,0.09);
-    padding: 2px 6px 2px 18px;
-    align-items: center;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
-    margin-top: 6px;
-}}
-</style>
-<span id='pill-anchor' style='display:none'></span>
-""", unsafe_allow_html=True)
+# ── Input bar ─────────────────────────────────────────────────────────────────
+# Single form wrapping ALL columns — pill styled via global CSS
+with st.form(key="chat_form", clear_on_submit=True):
+    txt_col, send_col, ic1_col, ic2_col, ic3_col, clr_col = st.columns([9, 1, 1, 1, 1, 1], gap="small")
+    with txt_col:
+        text_query = st.text_input(
+            label="msg",
+            placeholder="Ask me anything...",
+            label_visibility="collapsed",
+            key=f"chat_input_{st.session_state.input_key}",
+        )
+    with send_col:
+        send_clicked = st.form_submit_button("➤")
+    with ic1_col:
+        img_pressed = st.form_submit_button("⊞", help="Upload image")
+    with ic2_col:
+        cam_pressed = st.form_submit_button("📷", help="Camera")
+    with ic3_col:
+        mic_pressed = st.form_submit_button("🎙", help="Record voice")
+    with clr_col:
+        clr_pressed = st.form_submit_button("🗑", help="Clear chat")
 
-with txt_col:
-    with st.form(key="chat_form", clear_on_submit=True):
-        f1, f2 = st.columns([10, 1], gap="small")
-        with f1:
-            text_query = st.text_input(
-                label="msg",
-                placeholder="Ask me anything...",
-                label_visibility="collapsed",
-                key=f"chat_input_{st.session_state.input_key}",
-            )
-        with f2:
-            # Hidden send — Enter key triggers it; we hide the button visually
-            st.markdown("<div style='display:none'>", unsafe_allow_html=True)
-            send_clicked = st.form_submit_button("➤")
-            st.markdown("</div>", unsafe_allow_html=True)
+# ── JS injector via components (actually executes, unlike st.markdown script) ──
+import streamlit.components.v1 as _components
+_components.html("""
+<script>
+function applyStyles() {
+    const doc = window.parent.document;
 
-with icons_col:
-    ic1, ic2, ic3 = st.columns(3, gap="small")
-    with ic1:
-        img_class = "active-btn toolbar-btn" if img_active else "toolbar-btn pill-icon"
-        st.markdown(f"<div class='{img_class}'>", unsafe_allow_html=True)
-        if st.button("⊞", help="Upload image", key="img_btn"):
-            st.session_state.show_image  = not st.session_state.show_image
-            st.session_state.show_camera = False
-            if st.session_state.show_image:
-                st.session_state.show_voice = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-    with ic2:
-        cam_active = st.session_state.show_camera
-        cam_class  = "active-btn toolbar-btn" if cam_active else "toolbar-btn pill-icon"
-        st.markdown(f"<div class='{cam_class}'>", unsafe_allow_html=True)
-        if st.button("📷", help="Live camera capture", key="cam_btn"):
-            st.session_state.show_camera = not st.session_state.show_camera
-            st.session_state.show_image  = False
-            st.session_state.show_voice  = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-    with ic3:
-        mic_class = "active-btn toolbar-btn" if mic_active else "toolbar-btn pill-icon"
-        st.markdown(f"<div class='{mic_class}'>", unsafe_allow_html=True)
-        if st.button("🎙", help="Record voice", key="mic_btn"):
-            st.session_state.show_voice  = not st.session_state.show_voice
-            st.session_state.show_camera = False
-            if st.session_state.show_voice:
-                st.session_state.show_image = False
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+    // 1. PILL BAR — apply the Uiverse glassmorphism gradient style
+    const forms = doc.querySelectorAll('[data-testid="stForm"]');
+    forms.forEach(form => {
+        const hblock = form.querySelector('[data-testid="stHorizontalBlock"]');
+        if (hblock) {
+            hblock.setAttribute('style',
+                'background:linear-gradient(135deg,rgb(218,232,247) 0%,rgb(214,229,247) 100%);' +
+                'border-radius:1000px;' +
+                'border:none;' +
+                'padding:6px 8px 6px 20px;' +
+                'align-items:center;' +
+                'gap:4px;' +
+                'margin-top:6px;' +
+                'position:relative;' +
+                'box-shadow:rgba(79,156,232,0.7) 3px 3px 5px 0px, rgba(79,156,232,0.7) 5px 5px 20px 0px;'
+            );
+        }
 
-with clr_col:
-    st.markdown("<div class='toolbar-btn'>", unsafe_allow_html=True)
-    if st.button("🗑", help="Clear chat", key="clear_btn"):
-        st.session_state.messages        = []
-        st.session_state.autoplay_b64    = None
-        st.session_state.stored_audio    = None
-        st.session_state.stored_image    = None
-        st.session_state.stored_img_name = None
-        st.session_state.show_voice      = False
-        st.session_state.show_image      = False
-        st.session_state.show_camera     = False
-        st.session_state.input_key      += 1
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+        // Outer wrapper — gradient border effect
+        const outerBlock = hblock ? hblock.parentElement : null;
+        if (outerBlock) {
+            outerBlock.setAttribute('style',
+                'background:linear-gradient(135deg,rgb(179,208,253) 0%,rgb(164,202,248) 100%);' +
+                'border-radius:1000px;' +
+                'padding:4px;' +
+                'margin-top:6px;'
+            );
+        }
+
+        // Text input — match the reference style
+        const input = form.querySelector('input[type="text"], input:not([type])');
+        if (input) {
+            input.setAttribute('style',
+                'background:linear-gradient(135deg,rgb(218,232,247) 0%,rgb(214,229,247) 100%);' +
+                'border:none;' +
+                'outline:none;' +
+                'color:#2563eb;' +
+                'font-size:15px;' +
+                'border-radius:1000px;' +
+                'padding:8px 12px;' +
+                'width:100%;'
+            );
+        }
+
+        // 2. ALL submit buttons — blue circles matching the reference
+        form.querySelectorAll('[data-testid="stFormSubmitButton"] button').forEach(btn => {
+            btn.setAttribute('style',
+                'background:linear-gradient(135deg,rgb(164,202,248),rgb(79,156,232));' +
+                'border:none;' +
+                'border-radius:50%;' +
+                'min-height:40px;min-width:40px;' +
+                'width:40px;height:40px;' +
+                'font-size:17px;color:white;' +
+                'padding:0;cursor:pointer;' +
+                'box-shadow:rgba(79,156,232,0.7) 2px 2px 5px 0px;'
+            );
+        });
+    });
+
+    // 3. Remove dark backgrounds
+    doc.querySelectorAll('[data-testid="stVerticalBlock"]').forEach(el => {
+        const bg = window.getComputedStyle(el).backgroundColor;
+        const m = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+        if (m && parseInt(m[1])<50 && parseInt(m[2])<50 && parseInt(m[3])<80) {
+            el.style.background = 'transparent';
+            el.style.border = 'none';
+            el.style.boxShadow = 'none';
+        }
+    });
+}
+
+applyStyles();
+setTimeout(applyStyles, 300);
+setTimeout(applyStyles, 800);
+setTimeout(applyStyles, 2000);
+const obs = new MutationObserver(applyStyles);
+obs.observe(window.parent.document.body, {childList:true, subtree:true});
+</script>
+""", height=1)
+if img_pressed:
+    st.session_state.show_image  = not st.session_state.show_image
+    st.session_state.show_camera = False
+    if st.session_state.show_image:
+        st.session_state.show_voice = False
+    st.rerun()
+if cam_pressed:
+    st.session_state.show_camera = not st.session_state.show_camera
+    st.session_state.show_image  = False
+    st.session_state.show_voice  = False
+    st.rerun()
+if mic_pressed:
+    st.session_state.show_voice  = not st.session_state.show_voice
+    st.session_state.show_camera = False
+    if st.session_state.show_voice:
+        st.session_state.show_image = False
+    st.rerun()
+if clr_pressed:
+    st.session_state.messages        = []
+    st.session_state.autoplay_b64    = None
+    st.session_state.stored_audio    = None
+    st.session_state.stored_image    = None
+    st.session_state.stored_img_name = None
+    st.session_state.show_voice      = False
+    st.session_state.show_image      = False
+    st.session_state.show_camera     = False
+    st.session_state.input_key      += 1
+    st.rerun()
 
 # ── Hint when panels are open ─────────────────────────────────────────────────
 if st.session_state.show_voice or st.session_state.show_image:
