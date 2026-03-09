@@ -186,7 +186,7 @@ section[data-testid="stMain"] > div { padding-top:0 !important; margin-top:0 !im
 [data-testid="stFormSubmitButton"] > button {
     background: linear-gradient(135deg,#2563eb,#38bdf8) !important;
     border: none !important;
-    border-radius: 50% !important;
+    border-radius: 12px !important;
     min-height: 40px !important;
     min-width: 40px !important;
     width: 40px !important;
@@ -424,7 +424,29 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
 }
 
 }
+/* MOBILE FIX FOR INPUT BUTTONS */
+@media (max-width:768px){
 
+[data-testid="stForm"] [data-testid="stHorizontalBlock"]{
+    display:flex !important;
+    flex-direction:row !important;
+    justify-content:center !important;
+    gap:10px !important;
+}
+
+/* make icon buttons align horizontally */
+[data-testid="stForm"] [data-testid="column"]{
+    flex:0 0 auto !important;
+}
+
+/* icon button size */
+[data-testid="stFormSubmitButton"] button{
+    width:42px !important;
+    height:42px !important;
+    font-size:16px !important;
+}
+
+}
 </style>""", unsafe_allow_html=True)
 
 
