@@ -349,6 +349,47 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
 .stMainBlockContainer .block-container > div > div { gap: 0 !important; }
 .stMainBlockContainer [data-testid="stVerticalBlock"] > div:empty { display:none !important; height:0 !important; margin:0 !important; padding:0 !important; }
 .stMainBlockContainer [data-testid="element-container"]:has(.chat-box:empty) { margin:0 !important; padding:0 !important; height:0 !important; }
+            /* MOBILE RESPONSIVE FIX */
+@media (max-width: 768px) {
+
+    /* reduce hero spacing */
+    .block-container {
+        padding: 30px 14px 30px !important;
+    }
+
+    /* heading smaller for mobile */
+    .block-container h1,
+    .block-container h2,
+    .block-container h3 {
+        font-size: 26px !important;
+        line-height: 1.3 !important;
+    }
+
+    /* quick action buttons */
+    .stButton > button {
+        font-size: 14px !important;
+        padding: 10px 8px !important;
+        min-height: 45px !important;
+        white-space: normal !important;
+    }
+
+    /* allow buttons to wrap properly */
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    /* each quick action button width */
+    [data-testid="stHorizontalBlock"] > div {
+        flex: 1 1 30% !important;
+    }
+
+    /* input bar */
+    [data-testid="stForm"] {
+        width: 100% !important;
+    }
+
+}
 
 </style>""", unsafe_allow_html=True)
 
@@ -689,7 +730,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-c1,c2,c3,c4,c5,c6 = st.columns([1,1,1,1,1,1])
+c1,c2,c3 = st.columns(3)
+c4,c5,c6 = st.columns(3)
 with c1:
     if st.button("Voice", use_container_width=True):
         st.session_state.show_voice = True; st.rerun()
