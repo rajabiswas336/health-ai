@@ -68,25 +68,6 @@ for k, v in defaults.items():
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""           
 <style>
-/* HIDE STREAMLIT TOP MENU */
-[data-testid="stToolbar"]{
-    display:none !important;
-}
-
-/* HIDE HAMBURGER MENU */
-#MainMenu{
-    visibility:hidden;
-}
-
-/* HIDE STREAMLIT FOOTER */
-footer{
-    visibility:hidden;
-}
-
-/* HIDE DEPLOY / SHARE BUTTON */
-.stDeployButton{
-    display:none !important;
-}
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 html, body, [class*="css"] { font-family: 'Nunito', sans-serif !important; }
@@ -502,35 +483,6 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
 
 # ── Theme toggle button ────────────────────────────────────────────────────────
 st.markdown("""
-            /* Hide Streamlit top-right menu buttons */
-[data-testid="stToolbar"] {
-    display: none !important;
-}
-
-/* Hide GitHub icon */
-a[href*="github"] {
-    display: none !important;
-}
-
-/* Hide Share button */
-button[title="Share"] {
-    display: none !important;
-}
-
-/* Hide Edit button */
-button[title="Edit"] {
-    display: none !important;
-}
-
-/* Hide Manage App button */
-button[title="Manage app"] {
-    display: none !important;
-}
-
-/* Hide Deploy button (sometimes appears) */
-button[title="Deploy"] {
-    display: none !important;
-}
 <label id="theme-toggle-button" title="Toggle dark / light mode">
   <input type="checkbox" id="toggle">
   <svg viewBox="0 0 69.667 44" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
