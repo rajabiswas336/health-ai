@@ -305,14 +305,7 @@ hr { border-color:rgba(255,255,255,0.05) !important; }
 .live-dot { width:8px; height:8px; background:#22c55e; border-radius:50%; display:inline-block; margin-right:6px; animation:pulseLive 1.6s infinite; }
 @keyframes pulseLive { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.7);} 70%{box-shadow:0 0 0 8px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);} }
 
-/* ── Dark theme overrides (applied via JS to <body class="dark-mode">) ── */
-body.dark-mode .stApp { background: linear-gradient(180deg,#0f172a,#1e293b,#0f2744) !important; }
-body.dark-mode [data-testid="stSidebar"] { background:#0f172a !important; border-right:1px solid rgba(255,255,255,0.07) !important; }
-body.dark-mode .block-container * { color:#e2e8f0 !important; }
-body.dark-mode .stButton > button { background:rgba(30,41,59,0.8) !important; color:#93c5fd !important; border-color:rgba(99,148,235,0.3) !important; box-shadow: 0 1px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05) !important; }
-body.dark-mode .stButton > button:hover { background:rgba(37,99,235,0.25) !important; color:#bfdbfe !important; }
-body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input { background:linear-gradient(135deg,#1e2d45,#162035) !important; color:#93c5fd !important; }
-body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeholder { color:#4a6a9a !important; }
+/* ── Dark theme — applied via JS style injection into parent document ── */
 
 /* ── Theme toggle button styles ── */
 #theme-toggle-button {
@@ -533,26 +526,95 @@ st.markdown("""
 
 <script>
 (function() {
-    const toggle = document.getElementById('toggle');
-    if (!toggle) return;
-    // Restore saved preference
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark') {
-        toggle.checked = true;
-        document.body.classList.add('dark-mode');
-        window.parent.document.body.classList.add('dark-mode');
+    // Streamlit renders inside an iframe — we must inject styles into the PARENT document
+    function getParentDoc() {
+        try { return window.parent.document; } catch(e) { return document; }
     }
-    toggle.addEventListener('change', function() {
-        if (this.checked) {
-            document.body.classList.add('dark-mode');
-            window.parent.document.body.classList.add('dark-mode');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.body.classList.remove('dark-mode');
-            window.parent.document.body.classList.remove('dark-mode');
-            localStorage.setItem('theme', 'light');
+
+    const DARK_CSS = `
+        .stApp {
+            background: linear-gradient(180deg,#0f172a 0%,#1e293b 60%,#0f2744 100%) !important;
         }
-    });
+        [data-testid="stSidebar"] {
+            background: #0f172a !important;
+            border-right: 1px solid rgba(255,255,255,0.07) !important;
+        }
+        [data-testid="stSidebar"] div,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] label { color: white !important; }
+        .block-container, .block-container * { color: #e2e8f0 !important; }
+        .stButton > button {
+            background: rgba(30,41,59,0.85) !important;
+            color: #93c5fd !important;
+            border-color: rgba(99,148,235,0.3) !important;
+        }
+        .stButton > button:hover {
+            background: rgba(37,99,235,0.25) !important;
+            color: #bfdbfe !important;
+        }
+        [data-testid="stForm"] [data-testid="stTextInput"] input {
+            background: linear-gradient(135deg,#1e2d45,#162035) !important;
+            color: #93c5fd !important;
+        }
+        [data-testid="stForm"] [data-testid="stTextInput"] input::placeholder {
+            color: #4a6a9a !important;
+        }
+        [data-testid="stForm"] > div > [data-testid="stHorizontalBlock"] {
+            background: rgba(15,23,42,0.75) !important;
+            border-color: rgba(99,148,235,0.25) !important;
+        }
+        [data-testid="collapsedControl"] {
+            background: #1e3a8a !important;
+        }
+        [data-testid="collapsedControl"] button {
+            background: #1e3a8a !important;
+        }
+    `;
+
+    function applyDark() {
+        const pd = getParentDoc();
+        let el = pd.getElementById('st-dark-mode-style');
+        if (!el) {
+            el = pd.createElement('style');
+            el.id = 'st-dark-mode-style';
+            pd.head.appendChild(el);
+        }
+        el.textContent = DARK_CSS;
+        pd.documentElement.setAttribute('data-theme','dark');
+        localStorage.setItem('theme', 'dark');
+    }
+
+    function applyLight() {
+        const pd = getParentDoc();
+        const el = pd.getElementById('st-dark-mode-style');
+        if (el) el.textContent = '';
+        pd.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+    }
+
+    function init() {
+        const toggle = document.getElementById('toggle');
+        if (!toggle) { setTimeout(init, 200); return; }
+
+        // Restore saved theme on load
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark') {
+            toggle.checked = true;
+            applyDark();
+        }
+
+        toggle.addEventListener('change', function() {
+            if (this.checked) { applyDark(); } else { applyLight(); }
+        });
+    }
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
 </script>
 """, unsafe_allow_html=True)
