@@ -526,94 +526,157 @@ st.markdown("""
 
 <script>
 (function() {
-    // Streamlit renders inside an iframe — we must inject styles into the PARENT document
-    function getParentDoc() {
-        try { return window.parent.document; } catch(e) { return document; }
-    }
+    // ── KEY INSIGHT ──────────────────────────────────────────────────────────
+    // Streamlit re-renders the ENTIRE iframe on every interaction, wiping any
+    // injected <style> tags. Solution: use MutationObserver + setInterval to
+    // CONTINUOUSLY re-inject the dark styles whenever Streamlit wipes them.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const STYLE_ID = 'st-dark-override';
 
     const DARK_CSS = `
+        .stApp, .stApp > * {
+            background: linear-gradient(180deg,#0a0f1e 0%,#0f172a 40%,#0d1f3c 100%) !important;
+        }
         .stApp {
-            background: linear-gradient(180deg,#0f172a 0%,#1e293b 60%,#0f2744 100%) !important;
+            color: #e2e8f0 !important;
         }
         [data-testid="stSidebar"] {
-            background: #0f172a !important;
-            border-right: 1px solid rgba(255,255,255,0.07) !important;
+            background: #0a0f1e !important;
+            border-right: 1px solid rgba(99,148,235,0.2) !important;
         }
-        [data-testid="stSidebar"] div,
-        [data-testid="stSidebar"] span,
-        [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] label { color: white !important; }
-        .block-container, .block-container * { color: #e2e8f0 !important; }
+        [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
+        [data-testid="stSidebarContent"] * { color: #e2e8f0 !important; }
+        .block-container { color: #e2e8f0 !important; }
+        .block-container p,
+        .block-container span,
+        .block-container div,
+        .block-container h1,
+        .block-container h2,
+        .block-container h3,
+        .block-container label { color: #e2e8f0 !important; }
         .stButton > button {
-            background: rgba(30,41,59,0.85) !important;
+            background: rgba(15,23,42,0.9) !important;
             color: #93c5fd !important;
-            border-color: rgba(99,148,235,0.3) !important;
+            border-color: rgba(99,148,235,0.35) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.5) !important;
         }
         .stButton > button:hover {
-            background: rgba(37,99,235,0.25) !important;
+            background: rgba(37,99,235,0.3) !important;
             color: #bfdbfe !important;
         }
+        [data-testid="stFormSubmitButton"] > button {
+            background: linear-gradient(135deg,#1d4ed8,#0ea5e9) !important;
+            color: white !important;
+        }
         [data-testid="stForm"] [data-testid="stTextInput"] input {
-            background: linear-gradient(135deg,#1e2d45,#162035) !important;
+            background: linear-gradient(135deg,#0f1f38,#0a1628) !important;
             color: #93c5fd !important;
+            -webkit-text-fill-color: #93c5fd !important;
         }
         [data-testid="stForm"] [data-testid="stTextInput"] input::placeholder {
-            color: #4a6a9a !important;
+            color: #334e80 !important;
         }
         [data-testid="stForm"] > div > [data-testid="stHorizontalBlock"] {
-            background: rgba(15,23,42,0.75) !important;
-            border-color: rgba(99,148,235,0.25) !important;
+            background: rgba(10,15,30,0.85) !important;
+            border-color: rgba(99,148,235,0.3) !important;
         }
-        [data-testid="collapsedControl"] {
-            background: #1e3a8a !important;
-        }
+        [data-testid="collapsedControl"],
         [data-testid="collapsedControl"] button {
             background: #1e3a8a !important;
         }
+        [data-testid="stRadio"] label {
+            background: rgba(15,25,50,0.7) !important;
+            border-color: rgba(99,148,235,0.3) !important;
+            color: #e2e8f0 !important;
+        }
+        [data-testid="stSelectbox"] > div > div {
+            background: rgba(15,25,50,0.7) !important;
+            border-color: rgba(99,148,235,0.3) !important;
+            color: #e2e8f0 !important;
+        }
+        .analyse-wrap .stButton > button {
+            background: linear-gradient(135deg,#1d4ed8,#0ea5e9) !important;
+            color: white !important;
+        }
     `;
 
-    function applyDark() {
-        const pd = getParentDoc();
-        let el = pd.getElementById('st-dark-mode-style');
+    function getPD() {
+        try { return window.parent.document; } catch(e) { return document; }
+    }
+
+    function ensureDark() {
+        const pd = getPD();
+        if (!pd || !pd.head) return;
+        let el = pd.getElementById(STYLE_ID);
         if (!el) {
             el = pd.createElement('style');
-            el.id = 'st-dark-mode-style';
+            el.id = STYLE_ID;
             pd.head.appendChild(el);
         }
-        el.textContent = DARK_CSS;
-        pd.documentElement.setAttribute('data-theme','dark');
-        localStorage.setItem('theme', 'dark');
+        if (el.textContent !== DARK_CSS) {
+            el.textContent = DARK_CSS;
+        }
     }
 
-    function applyLight() {
-        const pd = getParentDoc();
-        const el = pd.getElementById('st-dark-mode-style');
+    function ensureLight() {
+        const pd = getPD();
+        if (!pd) return;
+        const el = pd.getElementById(STYLE_ID);
         if (el) el.textContent = '';
-        pd.documentElement.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'light');
     }
 
-    function init() {
-        const toggle = document.getElementById('toggle');
-        if (!toggle) { setTimeout(init, 200); return; }
+    function isDark() {
+        return localStorage.getItem('theme') === 'dark';
+    }
 
-        // Restore saved theme on load
-        const saved = localStorage.getItem('theme');
-        if (saved === 'dark') {
+    // ── Persistent re-apply loop ──────────────────────────────────────────────
+    // Runs every 300ms — re-injects dark styles if Streamlit wiped them
+    let loopInterval = null;
+    function startLoop() {
+        if (loopInterval) return;
+        loopInterval = setInterval(function() {
+            if (isDark()) ensureDark();
+        }, 300);
+    }
+    startLoop();
+
+    // ── Also watch for DOM mutations in parent ────────────────────────────────
+    try {
+        const pd = getPD();
+        if (pd && pd.body) {
+            new MutationObserver(function() {
+                if (isDark()) ensureDark();
+            }).observe(pd.body, { childList: true, subtree: true });
+        }
+    } catch(e) {}
+
+    // ── Wire up toggle ────────────────────────────────────────────────────────
+    function wireToggle() {
+        const toggle = document.getElementById('toggle');
+        if (!toggle) { setTimeout(wireToggle, 150); return; }
+
+        // Restore saved state
+        if (isDark()) {
             toggle.checked = true;
-            applyDark();
+            ensureDark();
         }
 
         toggle.addEventListener('change', function() {
-            if (this.checked) { applyDark(); } else { applyLight(); }
+            if (this.checked) {
+                localStorage.setItem('theme', 'dark');
+                ensureDark();
+            } else {
+                localStorage.setItem('theme', 'light');
+                ensureLight();
+            }
         });
     }
 
-    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', wireToggle);
     } else {
-        init();
+        wireToggle();
     }
 })();
 </script>
