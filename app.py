@@ -68,6 +68,25 @@ for k, v in defaults.items():
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""           
 <style>
+/* HIDE STREAMLIT TOP MENU */
+[data-testid="stToolbar"]{
+    display:none !important;
+}
+
+/* HIDE HAMBURGER MENU */
+#MainMenu{
+    visibility:hidden;
+}
+
+/* HIDE STREAMLIT FOOTER */
+footer{
+    visibility:hidden;
+}
+
+/* HIDE DEPLOY / SHARE BUTTON */
+.stDeployButton{
+    display:none !important;
+}
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 html, body, [class*="css"] { font-family: 'Nunito', sans-serif !important; }
