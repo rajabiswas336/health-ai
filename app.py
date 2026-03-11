@@ -483,6 +483,35 @@ body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeho
 
 # ── Theme toggle button ────────────────────────────────────────────────────────
 st.markdown("""
+            /* Hide Streamlit top-right menu buttons */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* Hide GitHub icon */
+a[href*="github"] {
+    display: none !important;
+}
+
+/* Hide Share button */
+button[title="Share"] {
+    display: none !important;
+}
+
+/* Hide Edit button */
+button[title="Edit"] {
+    display: none !important;
+}
+
+/* Hide Manage App button */
+button[title="Manage app"] {
+    display: none !important;
+}
+
+/* Hide Deploy button (sometimes appears) */
+button[title="Deploy"] {
+    display: none !important;
+}
 <label id="theme-toggle-button" title="Toggle dark / light mode">
   <input type="checkbox" id="toggle">
   <svg viewBox="0 0 69.667 44" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
