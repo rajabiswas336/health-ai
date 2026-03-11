@@ -526,78 +526,149 @@ st.markdown("""
 
 <script>
 (function() {
-    // ── KEY INSIGHT ──────────────────────────────────────────────────────────
-    // Streamlit re-renders the ENTIRE iframe on every interaction, wiping any
-    // injected <style> tags. Solution: use MutationObserver + setInterval to
-    // CONTINUOUSLY re-inject the dark styles whenever Streamlit wipes them.
-    // ─────────────────────────────────────────────────────────────────────────
-
     const STYLE_ID = 'st-dark-override';
 
-    const DARK_CSS = `
-        .stApp, .stApp > * {
-            background: linear-gradient(180deg,#0a0f1e 0%,#0f172a 40%,#0d1f3c 100%) !important;
-        }
+    // ── Dark theme — mirrors the light theme exactly, inverted ──────────────
+    // Light theme:
+    //   bg: #bfdbf2 → #5d92c7 → #395f80 (top to bottom blue gradient)
+    //   sidebar: #5b82b5
+    //   sidebar toggle: #2563eb
+    //   pill bar: rgba(255,255,255,0.75) border rgba(37,99,235,0.35)
+    //   input: rgb(218,232,247) text #2563eb
+    //   buttons: rgba(255,255,255,0.45) text #1e3a8a
+    //   text: dark navy on light blue
+    // Dark theme: deep navy/slate background, same blue accents, white text
+    const DARK = `
         .stApp {
-            color: #e2e8f0 !important;
+            background: linear-gradient(
+                180deg,
+                #0a1628 0%,
+                #0d1f3c 40%,
+                #081428 100%
+            ) !important;
         }
-        [data-testid="stSidebar"] {
-            background: #0a0f1e !important;
-            border-right: 1px solid rgba(99,148,235,0.2) !important;
+        header[data-testid="stHeader"] {
+            background: transparent !important;
         }
-        [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
-        [data-testid="stSidebarContent"] * { color: #e2e8f0 !important; }
         .block-container { color: #e2e8f0 !important; }
+
+        /* All text in main area */
         .block-container p,
         .block-container span,
-        .block-container div,
+        .block-container div:not([data-testid]),
         .block-container h1,
         .block-container h2,
         .block-container h3,
-        .block-container label { color: #e2e8f0 !important; }
+        .block-container h4,
+        .block-container label,
+        .block-container small { color: #cbd5e1 !important; }
+
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background: #0d1f3c !important;
+            border-right: 1px solid rgba(37,99,235,0.25) !important;
+        }
+        [data-testid="stSidebar"] *,
+        [data-testid="stSidebarContent"] * { color: #e2e8f0 !important; }
+
+        /* Sidebar toggle (collapsed control) */
+        [data-testid="collapsedControl"] {
+            background: #1e3a8a !important;
+        }
+        [data-testid="collapsedControl"] button {
+            background: #1e3a8a !important;
+        }
+        [data-testid="stSidebarHeader"] button {
+            background: #1e3a8a !important;
+        }
+
+        /* Radio buttons in sidebar */
+        [data-testid="stRadio"] label {
+            background: rgba(37,99,235,0.15) !important;
+            border: 1px solid rgba(37,99,235,0.3) !important;
+            color: #e2e8f0 !important;
+        }
+        [data-testid="stRadio"] label:hover {
+            background: rgba(37,99,235,0.28) !important;
+        }
+
+        /* Selectbox */
+        [data-testid="stSelectbox"] > div > div {
+            background: rgba(37,99,235,0.15) !important;
+            border: 1px solid rgba(37,99,235,0.3) !important;
+            color: #e2e8f0 !important;
+        }
+
+        /* Quick action buttons */
         .stButton > button {
-            background: rgba(15,23,42,0.9) !important;
+            background: rgba(14,27,60,0.85) !important;
             color: #93c5fd !important;
-            border-color: rgba(99,148,235,0.35) !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.5) !important;
+            border: 1px solid rgba(37,99,235,0.35) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important;
         }
         .stButton > button:hover {
-            background: rgba(37,99,235,0.3) !important;
+            background: rgba(37,99,235,0.25) !important;
             color: #bfdbfe !important;
+            border-color: rgba(37,99,235,0.6) !important;
         }
+
+        /* Send / submit buttons — keep blue gradient */
         [data-testid="stFormSubmitButton"] > button {
             background: linear-gradient(135deg,#1d4ed8,#0ea5e9) !important;
             color: white !important;
         }
+
+        /* Input pill bar */
+        [data-testid="stForm"] > div > [data-testid="stHorizontalBlock"] {
+            background: rgba(10,22,48,0.88) !important;
+            border: 1px solid rgba(37,99,235,0.4) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4) !important;
+        }
+
+        /* Text input inside pill */
         [data-testid="stForm"] [data-testid="stTextInput"] input {
-            background: linear-gradient(135deg,#0f1f38,#0a1628) !important;
+            background: linear-gradient(135deg,#0f1f3a,#0a1428) !important;
             color: #93c5fd !important;
             -webkit-text-fill-color: #93c5fd !important;
         }
         [data-testid="stForm"] [data-testid="stTextInput"] input::placeholder {
-            color: #334e80 !important;
+            color: #2d4a7a !important;
+            -webkit-text-fill-color: #2d4a7a !important;
         }
-        [data-testid="stForm"] > div > [data-testid="stHorizontalBlock"] {
-            background: rgba(10,15,30,0.85) !important;
-            border-color: rgba(99,148,235,0.3) !important;
-        }
-        [data-testid="collapsedControl"],
-        [data-testid="collapsedControl"] button {
-            background: #1e3a8a !important;
-        }
-        [data-testid="stRadio"] label {
-            background: rgba(15,25,50,0.7) !important;
-            border-color: rgba(99,148,235,0.3) !important;
-            color: #e2e8f0 !important;
-        }
-        [data-testid="stSelectbox"] > div > div {
-            background: rgba(15,25,50,0.7) !important;
-            border-color: rgba(99,148,235,0.3) !important;
-            color: #e2e8f0 !important;
-        }
+
+        /* Analyse button */
         .analyse-wrap .stButton > button {
             background: linear-gradient(135deg,#1d4ed8,#0ea5e9) !important;
             color: white !important;
+        }
+
+        /* Voice / image / camera panels */
+        [data-testid="stAudioInput"] {
+            background: #0d1f3c !important;
+            border-color: rgba(37,99,235,0.35) !important;
+        }
+        [data-testid="stFileUploader"] section {
+            background: #0d1f3c !important;
+            border-color: rgba(37,99,235,0.35) !important;
+        }
+        [data-testid="stCameraInput"] {
+            background: rgba(10,22,48,0.6) !important;
+            border-color: rgba(37,99,235,0.35) !important;
+        }
+
+        /* Alerts */
+        [data-testid="stAlert"] {
+            background: #0d1f3c !important;
+            border-color: rgba(37,99,235,0.2) !important;
+            color: #cbd5e1 !important;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar-thumb { background: #1e3a8a !important; }
+
+        /* Image borders */
+        [data-testid="stImage"] img {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
         }
     `;
 
@@ -605,7 +676,7 @@ st.markdown("""
         try { return window.parent.document; } catch(e) { return document; }
     }
 
-    function ensureDark() {
+    function injectDark() {
         const pd = getPD();
         if (!pd || !pd.head) return;
         let el = pd.getElementById(STYLE_ID);
@@ -614,70 +685,42 @@ st.markdown("""
             el.id = STYLE_ID;
             pd.head.appendChild(el);
         }
-        if (el.textContent !== DARK_CSS) {
-            el.textContent = DARK_CSS;
-        }
+        if (el.textContent !== DARK) el.textContent = DARK;
     }
 
-    function ensureLight() {
+    function removeDark() {
         const pd = getPD();
         if (!pd) return;
         const el = pd.getElementById(STYLE_ID);
         if (el) el.textContent = '';
     }
 
-    function isDark() {
-        return localStorage.getItem('theme') === 'dark';
-    }
+    function isDark() { return localStorage.getItem('theme') === 'dark'; }
 
-    // ── Persistent re-apply loop ──────────────────────────────────────────────
-    // Runs every 300ms — re-injects dark styles if Streamlit wiped them
-    let loopInterval = null;
-    function startLoop() {
-        if (loopInterval) return;
-        loopInterval = setInterval(function() {
-            if (isDark()) ensureDark();
-        }, 300);
-    }
-    startLoop();
+    // Re-inject every 250ms so Streamlit re-renders can't wipe it
+    setInterval(function() { if (isDark()) injectDark(); }, 250);
 
-    // ── Also watch for DOM mutations in parent ────────────────────────────────
+    // Also react instantly to DOM changes in parent
     try {
-        const pd = getPD();
-        if (pd && pd.body) {
-            new MutationObserver(function() {
-                if (isDark()) ensureDark();
-            }).observe(pd.body, { childList: true, subtree: true });
-        }
+        new MutationObserver(function() {
+            if (isDark()) injectDark();
+        }).observe(getPD().documentElement, { childList: true, subtree: true });
     } catch(e) {}
 
-    // ── Wire up toggle ────────────────────────────────────────────────────────
+    // Wire up the toggle button
     function wireToggle() {
         const toggle = document.getElementById('toggle');
         if (!toggle) { setTimeout(wireToggle, 150); return; }
-
-        // Restore saved state
-        if (isDark()) {
-            toggle.checked = true;
-            ensureDark();
-        }
-
+        // Restore on load
+        if (isDark()) { toggle.checked = true; injectDark(); }
         toggle.addEventListener('change', function() {
-            if (this.checked) {
-                localStorage.setItem('theme', 'dark');
-                ensureDark();
-            } else {
-                localStorage.setItem('theme', 'light');
-                ensureLight();
-            }
+            if (this.checked) { localStorage.setItem('theme','dark');  injectDark(); }
+            else              { localStorage.setItem('theme','light'); removeDark(); }
         });
     }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', wireToggle);
-    } else {
-        wireToggle();
-    }
+    } else { wireToggle(); }
 })();
 </script>
 """, unsafe_allow_html=True)
