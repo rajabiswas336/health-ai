@@ -32,6 +32,8 @@ def record_audio(file_path, timeout=20, phrase_time_limit=None):
 
 
 def transcribe_with_groq(stt_model, audio_filepath, GROQ_API_KEY, language="en"):
+    if language is None:
+        language = None   # Whisper will auto-detect
     """
     Transcribe audio using Groq Whisper.
     - language="en" for English
@@ -44,12 +46,10 @@ def transcribe_with_groq(stt_model, audio_filepath, GROQ_API_KEY, language="en")
     client = Groq(api_key=GROQ_API_KEY)
 
     with open(audio_filepath, "rb") as audio_file:
-        transcription = client.audio.transcriptions.create(
-            model=stt_model,
-            file=audio_file,
-            language=language   # Now supports "bn" for Bengali
-        )
-
+        _params = dict(model=stt_model, file=audio_file)
+        if language is not None:
+            _params["language"] = language   # omit entirely for Whisper auto-detect
+        transcription = client.audio.transcriptions.create(**_params)
     if hasattr(transcription, "text"):
         return transcription.text
     elif isinstance(transcription, dict) and "text" in transcription:

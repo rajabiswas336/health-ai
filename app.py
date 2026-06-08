@@ -1372,7 +1372,7 @@ if analyse_clicked:
                     stt_model="whisper-large-v3",
                     audio_filepath=audio_path,
                     GROQ_API_KEY=GROQ_API_KEY,
-                    language=get_whisper_language_code(language),
+                    language=None if auto_detect else get_whisper_language_code(language),
                 )
             elif _has_text:
                 patient_text = text_query.strip()
