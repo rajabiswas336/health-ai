@@ -7,3 +7,12 @@ speechrecognition
 pydub
 ffmpeg-python
 deep-translator
+transformers
+torch
+safetensors
+Pillow
+huggingface_hub
+accelerate
+edge-tts
+opencv-python-headless
+langdetect

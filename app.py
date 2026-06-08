@@ -13,7 +13,12 @@ from groq import Groq
 from brain_of_the_doctor import encode_image, analyze_image_with_query
 from voice_of_the_patient import transcribe_with_groq
 from voice_of_the_doctor import text_to_speech_with_gtts, text_to_speech_with_elevenlabs, text_to_speech_with_edge
-from language_utils import translate_to_english, translate_to_bengali, get_whisper_language_code
+from language_utils import (
+    translate_to_english, translate_to_bengali, translate_from_english,
+    get_whisper_language_code, get_edge_tts_voice, get_lang_iso,
+    auto_detect_language, get_language_display_name, LANGUAGE_CONFIG,
+)
+from cancer_prediction import predict_skin_cancer
 import base64
 
 def get_base64_image(path):
@@ -55,6 +60,7 @@ defaults = {
     "show_voice":     False,
     "show_image":     False,
     "show_camera":    False,
+    "show_cancer_pred": False,
     "input_key":      0,
     "autoplay_b64":   None,   # holds ONE audio to autoplay after rerun
     "stored_audio":   None,   # persists recorded audio bytes across reruns
@@ -314,6 +320,11 @@ body.dark-mode .stButton > button:hover { background:rgba(37,99,235,0.25) !impor
 body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input { background:linear-gradient(135deg,#1e2d45,#162035) !important; color:#93c5fd !important; }
 body.dark-mode [data-testid="stForm"] [data-testid="stTextInput"] input::placeholder { color:#4a6a9a !important; }
 
+/* ── Badge dark mode styles ── */
+body.dark-mode span[style*="background:#e0f2fe"] { background:#1e3a8a !important; border-color:#1e40af !important; color:#93c5fd !important; }
+body.dark-mode span[style*="background:#e6f6ff"] { background:#082f49 !important; border-color:#0c4a6e !important; color:#7dd3fc !important; }
+body.dark-mode span[style*="background:#fff1f2"] { background:#3f0f12 !important; border-color:#7c2d12 !important; color:#fca5a5 !important; }
+
 /* ── Theme toggle button styles ── */
 #theme-toggle-button {
   font-size: 11px;
@@ -530,31 +541,6 @@ st.markdown("""
     </g>
   </svg>
 </label>
-
-<script>
-(function() {
-    const toggle = document.getElementById('toggle');
-    if (!toggle) return;
-    // Restore saved preference
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark') {
-        toggle.checked = true;
-        document.body.classList.add('dark-mode');
-        window.parent.document.body.classList.add('dark-mode');
-    }
-    toggle.addEventListener('change', function() {
-        if (this.checked) {
-            document.body.classList.add('dark-mode');
-            window.parent.document.body.classList.add('dark-mode');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.body.classList.remove('dark-mode');
-            window.parent.document.body.classList.remove('dark-mode');
-            localStorage.setItem('theme', 'light');
-        }
-    });
-})();
-</script>
 """, unsafe_allow_html=True)
 
 
@@ -624,8 +610,9 @@ def ai_bubble(text, is_medical=False, audio_b64=None, ts=None, do_autoplay=False
                 background:linear-gradient(135deg,#1e2240,#1a1e38);
                 color:#d8e0f0;border-radius:4px 18px 18px 18px;
                 padding:10px 14px;font-size:14px;line-height:1.65;
-                box-shadow:0 2px 12px rgba(0,0,0,0.25);word-wrap:break-word;'>
-                {text}
+                box-shadow:0 2px 12px rgba(0,0,0,0.25);word-wrap:break-word;
+                white-space:pre-wrap;font-family:inherit;'>
+                {text.replace(chr(10), "<br>")}
             </div>
             <div style='font-size:10px;color:rgba(140,155,200,0.4);
                 margin-top:3px;padding-left:4px;font-family:JetBrains Mono,monospace;'>
@@ -700,29 +687,63 @@ with st.sidebar:
     <div style='height:1px;background:rgba(255,255,255,0.06);margin-bottom:18px;'></div>
     """, unsafe_allow_html=True)
 
-    language   = st.radio("🌐 Language / ভাষা", ["English", "Bengali"], index=0)
+    language = st.selectbox(
+        "🌐 Language / ভাষা",
+        ["English", "Bengali", "Hindi", "Odia", "Assamese"],
+        index=0,
+        help="Choose your language. The app auto-detects from voice/text too.",
+    )
+
+    # Auto-detect toggle
+    auto_detect = st.checkbox(
+        "🔍 Auto-detect language from input",
+        value=False,
+        help="When ON, language is detected from your voice/text automatically and overrides the selection above.",
+    )
+
     tts_engine = st.selectbox(
         "🔊 Voice Engine",
         ["ElevenLabs (High Quality)", "edge-tts Neural (Free)", "gTTS (Fallback)"],
         index=0 if language == "English" else 1,
     )
 
-    if language == "Bengali":
-        bn_voice = st.selectbox(
-            "🗣️ Bengali Voice",
-            [
-                "bn-BD-NabanitaNeural · Female (BD)",
-                "bn-BD-PradeepNeural · Male (BD)",
-                "bn-IN-TanishaaNeural · Female (IN)",
-                "bn-IN-BashkarNeural · Male (IN)",
-            ],
+    # Voice selection for non-English languages
+    from language_utils import LANGUAGE_CONFIG, get_edge_tts_voice
+    _default_voice = get_edge_tts_voice(language)
+
+    VOICE_OPTIONS = {
+        "Bengali":  [
+            ("bn-IN-TanishaaNeural", "Female · West Bengal"),
+            ("bn-IN-BashkarNeural",  "Male · West Bengal"),
+            ("bn-BD-NabanitaNeural", "Female · Bangladesh"),
+            ("bn-BD-PradeepNeural",  "Male · Bangladesh"),
+        ],
+        "Hindi":    [
+            ("hi-IN-SwaraNeural",   "Female · India"),
+            ("hi-IN-MadhurNeural",  "Male · India"),
+        ],
+        "Odia":     [
+            ("or-IN-SubhasiniNeural", "Female · India"),
+            ("or-IN-SukantNeural",    "Male · India"),
+        ],
+        "Assamese": [
+            ("as-IN-YashicaNeural",  "Female · India"),
+            ("as-IN-PriyomNeural",   "Male · India"),
+        ],
+    }
+
+    if language in VOICE_OPTIONS:
+        _voice_choices = VOICE_OPTIONS[language]
+        _voice_labels  = [f"{v[0].split('-')[2]} · {v[1]}" for v in _voice_choices]
+        _voice_idx     = st.selectbox(
+            "🗣️ Voice",
+            options=range(len(_voice_choices)),
+            format_func=lambda i: _voice_labels[i],
             index=0,
-            help="BD = Bangladesh accent · IN = West Bengal / India accent",
         )
-        # Extract just the voice ID (first token before ·)
-        bengali_voice_id = bn_voice.split(" ·")[0].strip()
+        selected_voice_id = _voice_choices[_voice_idx][0]
     else:
-        bengali_voice_id = "bn-BD-NabanitaNeural"
+        selected_voice_id = "en-US-JennyNeural"   # English
 
     st.markdown("""
     <div style='height:1px;background:rgba(255,255,255,0.06);margin:16px 0;'></div>
@@ -818,7 +839,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 c1,c2,c3 = st.columns(3)
-c4,c5,c6 = st.columns(3)
+c4,c5,c6,c7 = st.columns(4)
 with c1:
     if st.button("Voice", use_container_width=True):
         st.session_state.show_voice = True; st.rerun()
@@ -838,6 +859,11 @@ with c5:
 with c6:
     if st.button("Ask", use_container_width=True):
         pass
+with c7:
+    if st.button("🧬 Skin Cancer", use_container_width=True):
+        st.session_state.show_cancer_pred = True
+        st.session_state.show_image = True
+        st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -987,7 +1013,7 @@ with st.form(key="chat_form", clear_on_submit=True):
         send_clicked = st.form_submit_button("➤")
 
     with col3:
-        img_pressed = st.form_submit_button("⊞")
+        img_pressed = st.form_submit_button("🖼")
 
     with col4:
         cam_pressed = st.form_submit_button("📷")
@@ -1001,6 +1027,32 @@ with st.form(key="chat_form", clear_on_submit=True):
 import streamlit.components.v1 as _components
 _components.html("""
 <script>
+// ── THEME TOGGLE ──────────────────────────────────────────────
+(function initThemeToggle() {
+    const doc = window.parent.document;
+    const toggle = doc.getElementById('toggle');
+    if (!toggle) { setTimeout(initThemeToggle, 300); return; }
+    if (toggle._themeReady) return;     // avoid duplicate listeners
+    toggle._themeReady = true;
+
+    // Restore saved preference
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+        toggle.checked = true;
+        doc.body.classList.add('dark-mode');
+    }
+    toggle.addEventListener('change', function() {
+        if (this.checked) {
+            doc.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            doc.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+    });
+})();
+
+// ── PILL BAR STYLES ───────────────────────────────────────────
 function applyStyles() {
     const doc = window.parent.document;
 
@@ -1135,6 +1187,129 @@ if st.session_state.show_voice or st.session_state.show_image or st.session_stat
 else:
     analyse_clicked = False
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ── CANCER PREDICTION PANEL ──────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+if st.session_state.show_cancer_pred:
+    st.markdown("""
+    <div style='background:linear-gradient(135deg,#2d1b69,#1a1145);
+        border-radius:16px;padding:14px 16px 10px;margin:8px 0;
+        border:1px solid rgba(139,92,246,0.4);
+        box-shadow:0 8px 32px rgba(139,92,246,0.2);'>
+        <div style='font-size:11px;color:#a78bfa;letter-spacing:.12em;
+            text-transform:uppercase;font-family:JetBrains Mono,monospace;
+            margin-bottom:4px;'>🧬 SKIN CANCER PREDICTION</div>
+        <div style='font-size:13px;color:#c4b5fd;line-height:1.5;'>
+            Upload a skin lesion image above, then click <strong>Run Prediction</strong>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.session_state.stored_image:
+        cancer_predict_clicked = st.button(
+            "🧬  Run Skin Cancer Prediction",
+            use_container_width=True,
+            key="cancer_predict_btn",
+        )
+    else:
+        st.info("⬆️ Upload an image first (tap the ⊞ button or use the Image panel above)")
+        cancer_predict_clicked = False
+
+    if cancer_predict_clicked and st.session_state.stored_image:
+        with st.spinner("🧬 Running skin cancer prediction model..."):
+            result = predict_skin_cancer(st.session_state.stored_image)
+
+        predicted_class = result["class"]
+        confidence      = result["confidence"] * 100
+        risk            = result["risk"]
+
+        # ── Build result text ──────────────────────────────────────────────
+        result_lines = [
+            "🧬 Skin Cancer Prediction Result",
+            "",
+            f"Predicted: {predicted_class}",
+            f"Confidence: {confidence:.1f}%",
+            f"Risk Level: {risk}",
+            "",
+            "All Probabilities:",
+        ]
+        for cls, prob in sorted(result["all_probs"].items(),
+                                 key=lambda x: x[1], reverse=True):
+            bar = "█" * int(prob * 20)
+            result_lines.append(f"  {cls}: {prob*100:.1f}% {bar}")
+
+        # ── Uncertainty block (Gap 4) ──────────────────────────────────────
+        if result.get("uncertainty"):
+            pred_unc = result["uncertainty"].get(predicted_class, {})
+            std_pct  = pred_unc.get("std", 0) * 100
+            result_lines.append("")
+            result_lines.append("📊 Model Uncertainty (MC Dropout, 20 passes):")
+            if std_pct > 10:
+                result_lines.append(f"  ⚠️ High uncertainty ±{std_pct:.1f}% — consider re-uploading a clearer image.")
+            else:
+                result_lines.append(f"  ✅ Low uncertainty ±{std_pct:.1f}% — model is consistent.")
+
+        result_lines.append("")
+        result_lines.append("⚠️ This is an AI prediction for educational purposes only.")
+        result_lines.append("Please consult a dermatologist for professional diagnosis.")
+
+        # ── Safety guardrail (Gap 6) ──────────────────────────────────────
+        if result.get("is_urgent"):
+            result_lines.append("")
+            result_lines.append("🚨 URGENT: Potentially malignant lesion detected.")
+            result_lines.append("Please visit a dermatologist or oncologist IMMEDIATELY.")
+
+        result_text = "\n".join(result_lines)
+
+        # ── Grad-CAM heatmap display (Gap 1) — shown before chat history ──
+        if result.get("gradcam_bytes"):
+            st.image(
+                result["gradcam_bytes"],
+                caption="🔬 Grad-CAM: Highlighted region drove this prediction",
+                use_container_width=True,
+            )
+            gradcam_b64 = base64.b64encode(result["gradcam_bytes"]).decode()
+        else:
+            gradcam_b64 = None
+
+        # ── Uncertainty banner in UI ───────────────────────────────────────
+        if result.get("uncertainty"):
+            pred_unc = result["uncertainty"].get(predicted_class, {})
+            std_pct  = pred_unc.get("std", 0) * 100
+            if std_pct > 10:
+                st.warning(f"⚠️ High uncertainty (±{std_pct:.1f}%) — result may be unreliable.")
+            else:
+                st.success(f"✅ Low uncertainty (±{std_pct:.1f}%) — model is consistent.")
+
+        # ── Urgent safety banner in UI ─────────────────────────────────────
+        if result.get("is_urgent"):
+            st.error("🚨 URGENT: Potentially malignant. Visit a dermatologist IMMEDIATELY.")
+
+        # ── Add to chat history ───────────────────────────────────────────
+        _ts = _now()
+        img_b64 = base64.b64encode(st.session_state.stored_image).decode()
+        st.session_state.messages.append({
+            "role":    "user",
+            "content": "🧬 Skin Cancer Prediction Request",
+            "img_b64": img_b64,
+            "ts":      _ts,
+        })
+        st.session_state.messages.append({
+            "role":    "assistant",
+            "content": result_text,
+            "medical": True,
+            "img_b64": gradcam_b64,
+            "ts":      _now(),
+        })
+
+        # ── Reset ─────────────────────────────────────────────────────────
+        st.session_state.show_cancer_pred = False
+        st.session_state.stored_image     = None
+        st.session_state.stored_img_name  = None
+        st.session_state.show_image       = False
+        st.session_state.input_key       += 1
+        st.rerun()
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ── TEXT CHAT PIPELINE ────────────────────────────────────────────────────────
@@ -1167,18 +1342,31 @@ if send_clicked and text_query and text_query.strip():
 # ── VISION + VOICE ANALYSIS PIPELINE ─────────────────────────────────────────
 # ══════════════════════════════════════════════════════════════════════════════
 if analyse_clicked:
-    _has_question = audio_file or (text_query and text_query.strip())
-    if not _has_question:
-        st.warning("⚠️ Record voice or type a question first.")
-    elif not image_file:
-        st.warning("⚠️ Upload a medical image first (tap 🖼️).")
+    _has_voice  = bool(audio_file)
+    _has_image  = bool(image_file)
+    _has_text   = bool(text_query and text_query.strip())
+    _has_input  = _has_voice or _has_text
+
+    # ── Behaviour matrix ───────────────────────────────────────────────────
+    # voice only          → chat LLM  → voice + text reply
+    # image + text        → vision LLM → text only reply
+    # image + voice       → vision LLM → voice + text reply
+    # image only          → vision LLM → text only reply
+
+    if not _has_input and not _has_image:
+        st.warning("⚠️ Record voice, type a question, or upload an image.")
     elif not GROQ_API_KEY:
         st.error("🔑 GROQ_API_KEY missing — check your .env file.")
     else:
         with st.spinner("🔬 Analysing..."):
 
-            # Voice transcription
-            if audio_file:
+            audio_path      = None
+            image_path      = None
+            tts_path        = tempfile.mktemp(suffix=".mp3")
+            img_b64_display = None
+
+            # ── Step 1: Transcribe voice ───────────────────────────────────
+            if _has_voice:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_a:
                     tmp_a.write(audio_file.read())
                     audio_path = tmp_a.name
@@ -1188,93 +1376,134 @@ if analyse_clicked:
                     GROQ_API_KEY=GROQ_API_KEY,
                     language=get_whisper_language_code(language),
                 )
-            else:
+            elif _has_text:
                 patient_text = text_query.strip()
-                audio_path   = None
-
-            patient_text_en = (
-                translate_to_english(patient_text)
-                if language == "Bengali" and patient_text else patient_text
-            )
-
-            # Encode image
-            img_bytes = image_file.read()
-            img_b64_display = base64.b64encode(img_bytes).decode()
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_i:
-                tmp_i.write(img_bytes)
-                image_path = tmp_i.name
-
-            # LLM vision
-            doctor_response_en = analyze_image_with_query(
-                query=SYSTEM_PROMPT + "\n\nPatient says: " + (patient_text_en or ""),
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
-                encoded_image=encode_image(image_path),
-            )
-
-            doctor_response_out = (
-                translate_to_bengali(doctor_response_en)
-                if language == "Bengali" else doctor_response_en
-            )
-
-            # TTS
-            tts_path = tempfile.mktemp(suffix=".mp3")
-            use_elevenlabs = (
-                tts_engine.startswith("ElevenLabs")
-                and language == "English"
-                and bool(ELEVENLABS_API_KEY)
-            )
-            if use_elevenlabs:
-                # English — ElevenLabs highest quality, fallback to gTTS
-                try:
-                    text_to_speech_with_elevenlabs(doctor_response_out, tts_path, autoplay=False)
-                except Exception as e:
-                    st.warning(f"⚠️ ElevenLabs failed ({e.__class__.__name__}), using gTTS instead.")
-                    text_to_speech_with_gtts(doctor_response_out, tts_path,
-                                             language="en", autoplay=False)
-            elif language == "Bengali" and tts_engine.startswith("gTTS"):
-                # Bengali — gTTS fallback (if user explicitly chose it)
-                text_to_speech_with_gtts(doctor_response_out, tts_path,
-                                         language="bn", autoplay=False)
-            elif language == "Bengali":
-                # Bengali — Microsoft Neural edge-tts with selected voice
-                text_to_speech_with_edge(doctor_response_out, tts_path,
-                                         language="bn",
-                                         voice_id=bengali_voice_id,
-                                         autoplay=False)
             else:
-                # English fallback — gTTS
-                text_to_speech_with_gtts(doctor_response_out, tts_path,
-                                         language="en", autoplay=False)
+                patient_text = ""  # image-only
 
-            with open(tts_path, "rb") as f:
-                audio_b64 = base64.b64encode(f.read()).decode()
+            # ── Step 2: Language detection ────────────────────────────────
+            if auto_detect and patient_text:
+                detected_lang_code = auto_detect_language(patient_text)
+            else:
+                detected_lang_code = get_lang_iso(language)
 
-        # Encode input voice for history display
+            # ── Step 3: Translate input to English for LLM ────────────────
+            patient_text_en = (
+                translate_to_english(patient_text, source_lang=detected_lang_code)
+                if detected_lang_code != "en" and patient_text
+                else patient_text
+            )
+
+            # ── Step 4: LLM call ──────────────────────────────────────────
+            if _has_image:
+                # Vision pipeline (image + text, image + voice, image only)
+                img_bytes = image_file.read()
+                img_b64_display = base64.b64encode(img_bytes).decode()
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_i:
+                    tmp_i.write(img_bytes)
+                    image_path = tmp_i.name
+                _query = SYSTEM_PROMPT + "\n\nPatient says: " + (patient_text_en or "Please analyse this image.")
+                doctor_response_en = analyze_image_with_query(
+                    query=_query,
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    encoded_image=encode_image(image_path),
+                )
+            else:
+                # Voice / text only — pure chat, no image
+                _client = Groq(api_key=GROQ_API_KEY)
+                _history = [{"role": "system", "content": CHAT_PROMPT}]
+                for _m in st.session_state.messages[-6:]:
+                    if _m["role"] in ("user", "assistant"):
+                        _history.append({"role": _m["role"], "content": _m["content"]})
+                _history.append({"role": "user", "content": patient_text_en})
+                _resp = _client.chat.completions.create(
+                    messages=_history,
+                    model="llama-3.3-70b-versatile",
+                )
+                doctor_response_en = _resp.choices[0].message.content
+
+            # ── Step 5: Translate response back to patient's language ──────
+            doctor_response_out = (
+                translate_from_english(doctor_response_en, detected_lang_code)
+                if detected_lang_code != "en"
+                else doctor_response_en
+            )
+
+            # ── Step 6: TTS — only when voice input was used ──────────────
+            # voice only    → _has_voice=True  → voice + text
+            # image + voice → _has_voice=True  → voice + text
+            # image + text  → _has_voice=False → text only
+            # image only    → _has_voice=False → text only
+            _do_tts   = _has_voice
+            audio_b64 = None
+
+            if _do_tts:
+                use_elevenlabs = (
+                    tts_engine.startswith("ElevenLabs")
+                    and detected_lang_code == "en"
+                    and bool(ELEVENLABS_API_KEY)
+                )
+                if use_elevenlabs:
+                    try:
+                        text_to_speech_with_elevenlabs(doctor_response_out, tts_path, autoplay=False)
+                    except Exception as e:
+                        st.warning(f"⚠️ ElevenLabs failed ({e.__class__.__name__}), using edge-tts.")
+                        text_to_speech_with_edge(doctor_response_out, tts_path,
+                                                 language="en", autoplay=False)
+                elif tts_engine.startswith("gTTS"):
+                    _gtts_lang = detected_lang_code if detected_lang_code in ("en","bn","hi") else "en"
+                    text_to_speech_with_gtts(doctor_response_out, tts_path,
+                                             language=_gtts_lang, autoplay=False)
+                else:
+                    text_to_speech_with_edge(
+                        doctor_response_out, tts_path,
+                        language=detected_lang_code,
+                        voice_id=selected_voice_id,
+                        autoplay=False,
+                    )
+                with open(tts_path, "rb") as f:
+                    audio_b64 = base64.b64encode(f.read()).decode()
+
+        # ── Build user message label ───────────────────────────────────────
+        if _has_voice and _has_image:
+            _user_label = f"🔬 {patient_text or 'Voice + Image'}"
+        elif _has_voice:
+            _user_label = f"🎙️ {patient_text or 'Voice input'}"
+        elif _has_text and _has_image:
+            _user_label = f"🖼️ {patient_text}"
+        elif _has_image:
+            _user_label = "🖼️ Image analysis request"
+        else:
+            _user_label = f"💬 {patient_text}"
+
+        # Show detected language if auto-detect was on
+        if auto_detect and patient_text:
+            st.caption(f"🔍 Detected: {get_language_display_name(detected_lang_code)}")
+
+        # ── Encode input voice for history display ─────────────────────────
         input_voice_b64 = None
         if st.session_state.stored_audio:
             input_voice_b64 = base64.b64encode(st.session_state.stored_audio).decode()
 
-        # Add to chat history
-        _ts = datetime.now().strftime("%I:%M %p")
+        # ── Save to chat history ───────────────────────────────────────────
         st.session_state.messages.append({
             "role":      "user",
-            "content":   f"🔬 {patient_text or 'Voice input'}",
+            "content":   _user_label,
             "img_b64":   img_b64_display,
             "voice_b64": input_voice_b64,
-            "ts":        _ts,
+            "ts":        _now(),
         })
         st.session_state.messages.append({
             "role":      "assistant",
             "content":   doctor_response_out,
             "medical":   True,
             "audio_b64": audio_b64,
-            "ts":        datetime.now().strftime("%I:%M %p"),
+            "ts":        _now(),
         })
 
-        # Store b64 for autoplay — survives the rerun
-        st.session_state.autoplay_b64   = audio_b64
+        # Autoplay only when TTS was generated
+        st.session_state.autoplay_b64    = audio_b64 if _do_tts else None
         st.session_state.input_key      += 1
-        # Clear stored inputs after successful analysis
         st.session_state.stored_audio    = None
         st.session_state.stored_image    = None
         st.session_state.stored_img_name = None
