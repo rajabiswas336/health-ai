@@ -715,8 +715,6 @@ with st.sidebar:
         "Bengali":  [
             ("bn-IN-TanishaaNeural", "Female · West Bengal"),
             ("bn-IN-BashkarNeural",  "Male · West Bengal"),
-            ("bn-BD-NabanitaNeural", "Female · Bangladesh"),
-            ("bn-BD-PradeepNeural",  "Male · Bangladesh"),
         ],
         "Hindi":    [
             ("hi-IN-SwaraNeural",   "Female · India"),
@@ -1438,6 +1436,20 @@ if analyse_clicked:
             audio_b64 = None
 
             if _do_tts:
+                # When auto-detect is ON, pick voice from detected language.
+                # When auto-detect is OFF, use whatever the sidebar shows.
+                _AUTO_VOICE_MAP = {
+                    "bn": "bn-IN-TanishaaNeural",
+                    "hi": "hi-IN-SwaraNeural",
+                    "or": "or-IN-SubhasiniNeural",
+                    "as": "as-IN-YashicaNeural",
+                    "en": "en-US-JennyNeural",
+                }
+                if auto_detect and patient_text:
+                    _tts_voice = _AUTO_VOICE_MAP.get(detected_lang_code, "en-US-JennyNeural")
+                else:
+                    _tts_voice = selected_voice_id
+
                 use_elevenlabs = (
                     tts_engine.startswith("ElevenLabs")
                     and detected_lang_code == "en"
@@ -1458,7 +1470,7 @@ if analyse_clicked:
                     text_to_speech_with_edge(
                         doctor_response_out, tts_path,
                         language=detected_lang_code,
-                        voice_id=selected_voice_id,
+                        voice_id=_tts_voice,
                         autoplay=False,
                     )
                 with open(tts_path, "rb") as f:
