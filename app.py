@@ -19,6 +19,7 @@ from language_utils import (
     auto_detect_language, get_language_display_name, LANGUAGE_CONFIG,
 )
 from cancer_prediction import predict_skin_cancer
+from rag_retriever import retrieve_context
 import base64
 
 def get_base64_image(path):
@@ -1315,8 +1316,45 @@ if st.session_state.show_cancer_pred:
 if send_clicked and text_query and text_query.strip():
     _ts = datetime.now().strftime("%I:%M %p")
     st.session_state.messages.append({"role": "user", "content": text_query.strip(), "ts": _ts})
+    user_question = text_query.strip()
 
-    history = [{"role": "system", "content": CHAT_PROMPT}]
+    contexts = retrieve_context(user_question)
+
+    
+    medical_context = ""
+
+    for c in contexts:
+
+        medical_context += f"""
+    Question:
+      {c['question']}
+
+    Answer:
+        {c['answer']}
+
+    Source:
+        {c['document_source']}
+        """
+    
+    history = [
+    {
+        "role": "system",
+        "content": f"""
+You are a professional healthcare assistant.
+
+Use ONLY the medical context below.
+
+If the answer is not found in the context,
+say:
+
+'I do not have enough verified medical information.'
+
+Medical Context:
+
+{medical_context}
+"""
+    }
+]
     for m in st.session_state.messages:
         if m["role"] in ("user", "assistant"):
             history.append({"role": m["role"], "content": m["content"]})

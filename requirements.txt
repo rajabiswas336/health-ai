@@ -16,3 +16,6 @@ accelerate
 edge-tts
 opencv-python-headless
 langdetect
+datasets
+sentence-transformers
+scikit-learn
