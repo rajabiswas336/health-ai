@@ -19,3 +19,4 @@ langdetect
 datasets
 sentence-transformers
 scikit-learn
+torchvision
