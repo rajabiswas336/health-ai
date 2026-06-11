@@ -663,54 +663,32 @@ def source_citations_panel(sources):
     if not sources:
         return
     count = len(sources)
-    items_html = ""
-    for s in sources:
-        pct = int(s['score'] * 100)
-        if pct >= 75:
-            badge_bg = "#064e3b"; badge_border = "#059669"; badge_color = "#6ee7b7"; badge_icon = "🟢"
-        elif pct >= 50:
-            badge_bg = "#713f12"; badge_border = "#ca8a04"; badge_color = "#fde68a"; badge_icon = "🟡"
-        else:
-            badge_bg = "#7c2d12"; badge_border = "#dc2626"; badge_color = "#fca5a5"; badge_icon = "🔴"
-        q_text  = s.get('question', '')[:120]
-        src     = s.get('source', 'MedQuAD')
-        url     = s.get('url', '')
-        focus   = s.get('focus', '')
-        src_line = f"<a href='{url}' target='_blank' style='color:#7dd3fc;text-decoration:none;'>{src}</a>" if url else src
-        focus_html = f"<span style='color:rgba(180,200,240,0.5);font-size:10px;'> · {focus}</span>" if focus else ""
-        items_html += f"""
-        <div style='padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05);'>
-            <div style='display:flex;align-items:center;gap:6px;margin-bottom:4px;'>
-                <span style='font-size:11px;'>{badge_icon}</span>
-                <span style='background:{badge_bg};border:1px solid {badge_border};color:{badge_color};
-                    font-size:10px;padding:1px 8px;border-radius:10px;
-                    font-family:JetBrains Mono,monospace;font-weight:600;'>{pct}% match</span>
-                {focus_html}
-            </div>
-            <div style='font-size:12px;color:#c8d0e8;line-height:1.5;margin-bottom:3px;'>
-                <strong style='color:rgba(160,180,220,0.6);font-size:10px;'>Q:</strong> {q_text}
-            </div>
-            <div style='font-size:10px;color:rgba(140,160,200,0.5);
-                font-family:JetBrains Mono,monospace;'>
-                📄 {src_line}
-            </div>
-        </div>
-        """
-    st.markdown(f"""
-    <details style='margin:0 0 10px 40px;max-width:75%;'>
-        <summary style='cursor:pointer;font-size:11px;color:#7dd3fc;
-            font-family:JetBrains Mono,monospace;letter-spacing:.08em;
-            background:rgba(56,182,255,0.06);border:1px solid rgba(56,182,255,0.15);
-            border-radius:10px;padding:6px 12px;user-select:none;
-            transition:all 0.2s ease;'>
-            📚 Sources ({count} reference{"s" if count != 1 else ""})
-        </summary>
-        <div style='background:rgba(15,18,35,0.6);border:1px solid rgba(56,182,255,0.12);
-            border-top:none;border-radius:0 0 10px 10px;margin-top:-1px;'>
-            {items_html}
-        </div>
-    </details>
-    """, unsafe_allow_html=True)
+    label = f"\U0001F4DA Sources ({count} reference{'s' if count != 1 else ''})"
+    with st.expander(label, expanded=False):
+        for s in sources:
+            pct = int(s['score'] * 100)
+            if pct >= 75:
+                badge = "\U0001F7E2"; conf = "High"
+            elif pct >= 50:
+                badge = "\U0001F7E1"; conf = "Medium"
+            else:
+                badge = "\U0001F534"; conf = "Low"
+            q_text = s.get('question', '')[:120]
+            src    = s.get('source', 'MedQuAD')
+            url    = s.get('url', '')
+            focus  = s.get('focus', '')
+            # Source link
+            if url:
+                src_display = f"[{src}]({url})"
+            else:
+                src_display = src
+            focus_str = f" \u00b7 *{focus}*" if focus else ""
+            st.markdown(
+                f"{badge} **{pct}% match** ({conf}){focus_str}  \n"
+                f"**Q:** {q_text}  \n"
+                f"\U0001F4C4 Source: {src_display}",
+            )
+            st.markdown("---")
 
 # ── Prompts
 # ── Prompts ───────────────────────────────────────────────────────────────────
