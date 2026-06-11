@@ -658,6 +658,60 @@ def day_divider(label="Today"):
     </div>
     """, unsafe_allow_html=True)
 
+def source_citations_panel(sources):
+    """Render a collapsible source-citations panel below an AI response."""
+    if not sources:
+        return
+    count = len(sources)
+    items_html = ""
+    for s in sources:
+        pct = int(s['score'] * 100)
+        if pct >= 75:
+            badge_bg = "#064e3b"; badge_border = "#059669"; badge_color = "#6ee7b7"; badge_icon = "🟢"
+        elif pct >= 50:
+            badge_bg = "#713f12"; badge_border = "#ca8a04"; badge_color = "#fde68a"; badge_icon = "🟡"
+        else:
+            badge_bg = "#7c2d12"; badge_border = "#dc2626"; badge_color = "#fca5a5"; badge_icon = "🔴"
+        q_text  = s.get('question', '')[:120]
+        src     = s.get('source', 'MedQuAD')
+        url     = s.get('url', '')
+        focus   = s.get('focus', '')
+        src_line = f"<a href='{url}' target='_blank' style='color:#7dd3fc;text-decoration:none;'>{src}</a>" if url else src
+        focus_html = f"<span style='color:rgba(180,200,240,0.5);font-size:10px;'> · {focus}</span>" if focus else ""
+        items_html += f"""
+        <div style='padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05);'>
+            <div style='display:flex;align-items:center;gap:6px;margin-bottom:4px;'>
+                <span style='font-size:11px;'>{badge_icon}</span>
+                <span style='background:{badge_bg};border:1px solid {badge_border};color:{badge_color};
+                    font-size:10px;padding:1px 8px;border-radius:10px;
+                    font-family:JetBrains Mono,monospace;font-weight:600;'>{pct}% match</span>
+                {focus_html}
+            </div>
+            <div style='font-size:12px;color:#c8d0e8;line-height:1.5;margin-bottom:3px;'>
+                <strong style='color:rgba(160,180,220,0.6);font-size:10px;'>Q:</strong> {q_text}
+            </div>
+            <div style='font-size:10px;color:rgba(140,160,200,0.5);
+                font-family:JetBrains Mono,monospace;'>
+                📄 {src_line}
+            </div>
+        </div>
+        """
+    st.markdown(f"""
+    <details style='margin:0 0 10px 40px;max-width:75%;'>
+        <summary style='cursor:pointer;font-size:11px;color:#7dd3fc;
+            font-family:JetBrains Mono,monospace;letter-spacing:.08em;
+            background:rgba(56,182,255,0.06);border:1px solid rgba(56,182,255,0.15);
+            border-radius:10px;padding:6px 12px;user-select:none;
+            transition:all 0.2s ease;'>
+            📚 Sources ({count} reference{"s" if count != 1 else ""})
+        </summary>
+        <div style='background:rgba(15,18,35,0.6);border:1px solid rgba(56,182,255,0.12);
+            border-top:none;border-radius:0 0 10px 10px;margin-top:-1px;'>
+            {items_html}
+        </div>
+    </details>
+    """, unsafe_allow_html=True)
+
 # ── Prompts
 # ── Prompts ───────────────────────────────────────────────────────────────────
 SYSTEM_PROMPT = (
@@ -895,6 +949,9 @@ if st.session_state.messages:
                           audio_b64=msg.get("audio_b64"),
                           ts=msg.get("ts",""),
                           do_autoplay=_do_ap)
+                # Show source citations if RAG sources are attached
+                if msg.get("rag_sources"):
+                    source_citations_panel(msg["rag_sources"])
     st.markdown("</div>", unsafe_allow_html=True)
 
 # Consume autoplay flag after render so it only plays once
@@ -1318,43 +1375,34 @@ if send_clicked and text_query and text_query.strip():
     st.session_state.messages.append({"role": "user", "content": text_query.strip(), "ts": _ts})
     user_question = text_query.strip()
 
-    contexts = retrieve_context(user_question)
+    # RAG retrieval — returns structured results with scores
+    rag_results = retrieve_context(user_question)
 
-    
+    # Build medical context string for the LLM prompt
     medical_context = ""
-
-    for c in contexts:
-
+    for c in rag_results:
         medical_context += f"""
-    Question:
-      {c['question']}
-
-    Answer:
-        {c['answer']}
-
-    Source:
-        {c['document_source']}
+    Question: {c['question']}
+    Answer: {c['answer']}
+    Source: {c['source']}
         """
-    
-    history = [
-    {
-        "role": "system",
-        "content": f"""
-You are a professional healthcare assistant.
 
-Use ONLY the medical context below.
+    # Choose system prompt based on whether RAG found relevant context
+    if rag_results:
+        sys_content = f"""You are a professional healthcare assistant.
 
-If the answer is not found in the context,
-say:
-
+Use ONLY the medical context below to answer.
+If the answer is not found in the context, say:
 'I do not have enough verified medical information.'
 
 Medical Context:
+{medical_context}"""
+    else:
+        sys_content = """You are a professional healthcare assistant.
+No verified medical context was found for this query.
+Say: 'I do not have enough verified medical information to answer this question accurately. Please consult a healthcare professional.'"""
 
-{medical_context}
-"""
-    }
-]
+    history = [{"role": "system", "content": sys_content}]
     for m in st.session_state.messages:
         if m["role"] in ("user", "assistant"):
             history.append({"role": m["role"], "content": m["content"]})
@@ -1367,7 +1415,8 @@ Medical Context:
         ai_text = resp.choices[0].message.content
 
     st.session_state.messages.append(
-        {"role": "assistant", "content": ai_text, "medical": False,
+        {"role": "assistant", "content": ai_text, "medical": bool(rag_results),
+         "rag_sources": rag_results if rag_results else None,
          "ts": datetime.now().strftime("%I:%M %p")}
     )
     st.session_state.input_key += 1
@@ -1400,6 +1449,7 @@ if analyse_clicked:
             image_path      = None
             tts_path        = tempfile.mktemp(suffix=".mp3")
             img_b64_display = None
+            _voice_rag_results = []  # will be populated in voice/text-only path
 
             # ── Step 1: Transcribe voice ───────────────────────────────────
             if _has_voice:
@@ -1446,8 +1496,25 @@ if analyse_clicked:
                 )
             else:
                 # Voice / text only — pure chat, no image
+                # ── RAG retrieval for voice/text pipeline ──
+                _voice_rag_results = retrieve_context(patient_text_en) if patient_text_en else []
+                _voice_medical_ctx = ""
+                for _rc in _voice_rag_results:
+                    _voice_medical_ctx += f"\nQuestion: {_rc['question']}\nAnswer: {_rc['answer']}\nSource: {_rc['source']}\n"
+
+                if _voice_rag_results:
+                    _voice_sys = f"""You are a professional healthcare assistant.
+Use ONLY the medical context below to answer. If the answer is not found, say:
+'I do not have enough verified medical information.'
+Keep your answer to 2-3 sentences. Speak directly to the patient. No preamble.
+
+Medical Context:
+{_voice_medical_ctx}"""
+                else:
+                    _voice_sys = CHAT_PROMPT
+
                 _client = Groq(api_key=GROQ_API_KEY)
-                _history = [{"role": "system", "content": CHAT_PROMPT}]
+                _history = [{"role": "system", "content": _voice_sys}]
                 for _m in st.session_state.messages[-6:]:
                     if _m["role"] in ("user", "assistant"):
                         _history.append({"role": _m["role"], "content": _m["content"]})
@@ -1543,12 +1610,14 @@ if analyse_clicked:
             "voice_b64": input_voice_b64,
             "ts":        _now(),
         })
+        # Attach RAG sources to the assistant message (voice pipeline)
         st.session_state.messages.append({
-            "role":      "assistant",
-            "content":   doctor_response_out,
-            "medical":   True,
-            "audio_b64": audio_b64,
-            "ts":        _now(),
+            "role":        "assistant",
+            "content":     doctor_response_out,
+            "medical":     True,
+            "audio_b64":   audio_b64,
+            "rag_sources": _voice_rag_results if _voice_rag_results else None,
+            "ts":          _now(),
         })
 
         # Autoplay only when TTS was generated
