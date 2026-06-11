@@ -114,6 +114,29 @@ section[data-testid="stMain"] > div { padding-top:0 !important; margin-top:0 !im
 [data-testid="stSidebar"] { background:#5b82b5 !important; border-right:1px solid rgba(255,255,255,0.2) !important; }
 [data-testid="stSidebarContent"] { padding:24px 18px !important; }
 
+/* ── Sidebar toggle button (double arrow) ── */
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button {
+    width: 40px !important;
+    height: 40px !important;
+    border: 2px solid #2563eb !important;
+    border-radius: 8px !important;
+    background: rgba(255,255,255,0.95) !important;
+    box-shadow: 0 2px 12px rgba(37,99,235,0.25) !important;
+    transition: all 0.2s ease !important;
+}
+[data-testid="stSidebarCollapsedControl"] button:hover,
+[data-testid="collapsedControl"] button:hover {
+    background: #eff6ff !important;
+    border-color: #1d4ed8 !important;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.35) !important;
+}
+[data-testid="stSidebarCollapsedControl"] button span,
+[data-testid="collapsedControl"] button span {
+    font-size: 24px !important;
+    color: #2563eb !important;
+}
+
 /* Sidebar text white but NOT buttons */
 [data-testid="stSidebar"] div,
 [data-testid="stSidebar"] span,
@@ -824,10 +847,10 @@ st.markdown(f"""
             M.Tech · Artificial Intelligence
         </div>
     </div>
-    <div style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
-        <span style='display:inline-flex;align-items:center;gap:5px;background:#e0f2fe;border:1px solid #7dd3fc;color:#0369a1;font-size:11px;padding:4px 12px;border-radius:20px;font-family:JetBrains Mono,monospace;'><span class="live-dot"></span>LIVE</span>
-        <span style='display:inline-flex;align-items:center;background:#e6f6ff;border:1px solid #7dd3fc;color:#0284c7;font-size:11px;padding:4px 12px;border-radius:20px;font-family:JetBrains Mono,monospace;'>Vision + Voice</span>
-        <span style='display:inline-flex;align-items:center;background:#fff1f2;border:1px solid #fca5a5;color:#b91c1c;font-size:11px;padding:4px 12px;border-radius:20px;font-family:JetBrains Mono,monospace;'>Educational Only</span>
+    <div style='display:flex;gap:10px;justify-content:center;flex-wrap:wrap;'>
+        <span style='display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);border:1px solid rgba(34,197,94,0.4);color:#14532d;font-size:11px;font-weight:800;padding:4px 14px;border-radius:0;font-family:"Nunito",sans-serif;box-shadow:0 2px 10px rgba(34,197,94,0.15);letter-spacing:0.05em;'><span class="live-dot"></span>LIVE</span>
+        <span style='display:inline-flex;align-items:center;background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);border:1px solid rgba(59,130,246,0.4);color:#1e3a8a;font-size:11px;font-weight:800;padding:4px 14px;border-radius:0;font-family:"Nunito",sans-serif;box-shadow:0 2px 10px rgba(59,130,246,0.15);letter-spacing:0.05em;'>VISION + VOICE</span>
+        <span style='display:inline-flex;align-items:center;background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);border:1px solid rgba(239,68,68,0.4);color:#7f1d1d;font-size:11px;font-weight:800;padding:4px 14px;border-radius:0;font-family:"Nunito",sans-serif;box-shadow:0 2px 10px rgba(239,68,68,0.15);letter-spacing:0.05em;'>EDUCATIONAL</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -882,7 +905,7 @@ with c3:
         st.session_state.show_voice = True
         st.session_state.show_image = True; st.rerun()
 with c4:
-    if st.button("Radiology", use_container_width=True):
+    if st.button("Analyse Medical Report", use_container_width=True):
         st.session_state.show_image = True; st.rerun()
 with c5:
     if st.button("বাংলা", use_container_width=True):
