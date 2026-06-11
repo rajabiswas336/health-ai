@@ -829,8 +829,8 @@ st.markdown(f"""
         AI Based Conversational Assistant
 </div>
 
-<div style='font-family:"Times New Roman", serif;font-size:clamp(13px,3vw,16px);
-        font-weight:600;color:#2563eb;margin-bottom:14px;'>
+<div style='font-family:"Times New Roman", serif;font-size:clamp(25px,3vw,16px);
+        font-weight:600;color:#0D47A1;margin-bottom:14px;'>
         For Healthcare and Support
 </div>
     <div style='margin-bottom:10px;'>
@@ -905,7 +905,7 @@ with c3:
         st.session_state.show_voice = True
         st.session_state.show_image = True; st.rerun()
 with c4:
-    if st.button("Analyse Medical Report", use_container_width=True):
+    if st.button("Medical Report", use_container_width=True):
         st.session_state.show_image = True; st.rerun()
 with c5:
     if st.button("বাংলা", use_container_width=True):
