@@ -90,7 +90,6 @@ html, body, [class*="css"] { font-family: 'Nunito', sans-serif !important; }
     ) !important;
     min-height: 100vh !important;
 }
-
 /* Keep header for sidebar toggle but hide visual space */
 header[data-testid="stHeader"] {
     background: transparent !important;
@@ -1392,16 +1391,23 @@ if send_clicked and text_query and text_query.strip():
     if rag_results:
         sys_content = f"""You are a professional healthcare assistant.
 
-Use ONLY the medical context below to answer.
-If the answer is not found in the context, say:
-'I do not have enough verified medical information.'
+Use the verified medical context below as your PRIMARY source of information.
+If the context directly answers the patient's question, base your response on it.
+If the context is only partially relevant or doesn't fully address the question,
+you may supplement with your own general medical knowledge, but clearly note
+that the patient should verify with a healthcare professional.
+
+Always respond helpfully in 2-3 clear sentences. Speak directly to the patient.
+Do not refuse to answer — provide the best guidance you can.
 
 Medical Context:
 {medical_context}"""
     else:
         sys_content = """You are a professional healthcare assistant.
-No verified medical context was found for this query.
-Say: 'I do not have enough verified medical information to answer this question accurately. Please consult a healthcare professional.'"""
+No verified medical references were found for this specific query, but you should
+still help the patient. Provide general medical guidance based on your training.
+Always include a reminder to consult a healthcare professional for personalized advice.
+Respond in 2-3 clear sentences. Speak directly to the patient. No preamble."""
 
     history = [{"role": "system", "content": sys_content}]
     for m in st.session_state.messages:
@@ -1505,14 +1511,19 @@ if analyse_clicked:
 
                 if _voice_rag_results:
                     _voice_sys = f"""You are a professional healthcare assistant.
-Use ONLY the medical context below to answer. If the answer is not found, say:
-'I do not have enough verified medical information.'
-Keep your answer to 2-3 sentences. Speak directly to the patient. No preamble.
+Use the verified medical context below as your PRIMARY source of information.
+If the context directly answers the question, base your response on it.
+If the context is only partially relevant, supplement with your own general
+medical knowledge and note the patient should verify with a professional.
+Always respond helpfully in 2-3 sentences. Speak directly to the patient.
 
 Medical Context:
 {_voice_medical_ctx}"""
                 else:
-                    _voice_sys = CHAT_PROMPT
+                    _voice_sys = """You are a professional healthcare assistant.
+No verified medical references were found, but still help the patient.
+Provide general medical guidance. Include a reminder to consult a healthcare
+professional for personalized advice. Keep to 2-3 sentences. No preamble."""
 
                 _client = Groq(api_key=GROQ_API_KEY)
                 _history = [{"role": "system", "content": _voice_sys}]

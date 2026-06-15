@@ -7,7 +7,10 @@ import numpy as np
 # Minimum cosine similarity to consider a result relevant.
 # Results below this threshold are discarded to avoid injecting
 # unrelated context that could cause the LLM to hallucinate.
-MIN_SIMILARITY = 0.30
+# NOTE: 0.50 filters out tangential matches (e.g. "stomach pain" matching
+# "abdominal wall defect" at 46%) that previously caused the LLM to refuse
+# answering because the context was irrelevant to the actual question.
+MIN_SIMILARITY = 0.50
 
 
 @st.cache_resource
