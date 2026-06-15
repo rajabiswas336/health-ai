@@ -19,7 +19,7 @@ from language_utils import (
     auto_detect_language, get_language_display_name, LANGUAGE_CONFIG,
 )
 from cancer_prediction import predict_skin_cancer
-from rag_retriever import retrieve_context
+from rag_retriever import retrieve_context, HIGH_SIMILARITY
 import base64
 
 def get_base64_image(path):
@@ -1375,20 +1375,23 @@ if send_clicked and text_query and text_query.strip():
     st.session_state.messages.append({"role": "user", "content": text_query.strip(), "ts": _ts})
     user_question = text_query.strip()
 
-    # RAG retrieval — returns structured results with scores
+    # RAG retrieval — returns ALL results above MIN_SIMILARITY (for source display)
     rag_results = retrieve_context(user_question)
 
-    # Build medical context string for the LLM prompt
+    # Separate high-confidence results (used for LLM context) from all results (shown as sources)
+    high_conf_results = [r for r in rag_results if r['score'] >= HIGH_SIMILARITY]
+
+    # Build medical context string ONLY from high-confidence results
     medical_context = ""
-    for c in rag_results:
+    for c in high_conf_results:
         medical_context += f"""
     Question: {c['question']}
     Answer: {c['answer']}
     Source: {c['source']}
         """
 
-    # Choose system prompt based on whether RAG found relevant context
-    if rag_results:
+    # Choose system prompt: use strict RAG only when high-confidence context exists
+    if high_conf_results:
         sys_content = f"""You are a professional healthcare assistant.
 
 Use the verified medical context below as your PRIMARY source of information.
@@ -1404,7 +1407,7 @@ Medical Context:
 {medical_context}"""
     else:
         sys_content = """You are a professional healthcare assistant.
-No verified medical references were found for this specific query, but you should
+No strongly matching medical references were found for this specific query, but you should
 still help the patient. Provide general medical guidance based on your training.
 Always include a reminder to consult a healthcare professional for personalized advice.
 Respond in 2-3 clear sentences. Speak directly to the patient. No preamble."""
@@ -1421,8 +1424,9 @@ Respond in 2-3 clear sentences. Speak directly to the patient. No preamble."""
         )
         ai_text = resp.choices[0].message.content
 
+    # Always attach rag_results as sources (even low-confidence) for user transparency
     st.session_state.messages.append(
-        {"role": "assistant", "content": ai_text, "medical": bool(rag_results),
+        {"role": "assistant", "content": ai_text, "medical": bool(high_conf_results),
          "rag_sources": rag_results if rag_results else None,
          "ts": datetime.now().strftime("%I:%M %p")}
     )
@@ -1505,11 +1509,12 @@ if analyse_clicked:
                 # Voice / text only — pure chat, no image
                 # ── RAG retrieval for voice/text pipeline ──
                 _voice_rag_results = retrieve_context(patient_text_en) if patient_text_en else []
+                _voice_high_conf = [r for r in _voice_rag_results if r['score'] >= HIGH_SIMILARITY]
                 _voice_medical_ctx = ""
-                for _rc in _voice_rag_results:
+                for _rc in _voice_high_conf:
                     _voice_medical_ctx += f"\nQuestion: {_rc['question']}\nAnswer: {_rc['answer']}\nSource: {_rc['source']}\n"
 
-                if _voice_rag_results:
+                if _voice_high_conf:
                     _voice_sys = f"""You are a professional healthcare assistant.
 Use the verified medical context below as your PRIMARY source of information.
 If the context directly answers the question, base your response on it.
@@ -1521,7 +1526,7 @@ Medical Context:
 {_voice_medical_ctx}"""
                 else:
                     _voice_sys = """You are a professional healthcare assistant.
-No verified medical references were found, but still help the patient.
+No strongly matching medical references were found, but still help the patient.
 Provide general medical guidance. Include a reminder to consult a healthcare
 professional for personalized advice. Keep to 2-3 sentences. No preamble."""
 

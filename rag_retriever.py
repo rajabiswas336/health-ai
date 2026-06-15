@@ -4,13 +4,14 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
-# Minimum cosine similarity to consider a result relevant.
-# Results below this threshold are discarded to avoid injecting
-# unrelated context that could cause the LLM to hallucinate.
-# NOTE: 0.50 filters out tangential matches (e.g. "stomach pain" matching
-# "abdominal wall defect" at 46%) that previously caused the LLM to refuse
-# answering because the context was irrelevant to the actual question.
-MIN_SIMILARITY = 0.50
+# Minimum cosine similarity to consider a result relevant enough to DISPLAY
+# as a source citation. Results below this are discarded entirely.
+MIN_SIMILARITY = 0.30
+
+# Minimum cosine similarity to consider a result HIGH-CONFIDENCE enough
+# to use as constraining LLM context. Below this, the LLM supplements
+# with its own knowledge instead of being restricted to RAG context.
+HIGH_SIMILARITY = 0.50
 
 
 @st.cache_resource
