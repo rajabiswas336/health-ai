@@ -975,7 +975,7 @@ if st.session_state.show_voice:
     </div>
     """, unsafe_allow_html=True)
     _raw_audio = st.audio_input(
-        label="Record" if language == "English" else "রেকর্ড করুন",
+        label={"English": "Record", "Bengali": "রেকর্ড করুন", "Hindi": "रिकॉर्ड करें", "Odia": "ରେକର୍ଡ କରନ୍ତୁ", "Assamese": "ৰেকৰ্ড কৰক"}.get(language, "Record"),
         key="audio_recorder",
     )
     if _raw_audio is not None:
