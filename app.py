@@ -1500,15 +1500,17 @@ if analyse_clicked:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_i:
                     tmp_i.write(img_bytes)
                     image_path = tmp_i.name
-                # ── RAG retrieval for vision pipeline ──
-                if patient_text_en:
-                    _voice_rag_results = retrieve_context(patient_text_en)
                 _query = SYSTEM_PROMPT + "\n\nPatient says: " + (patient_text_en or "Please analyse this image.")
                 doctor_response_en = analyze_image_with_query(
                     query=_query,
                     model="qwen/qwen3.6-27b",
                     encoded_image=encode_image(image_path),
                 )
+                # ── RAG retrieval for vision pipeline ──
+                # Use patient text if available, otherwise use the AI response
+                _rag_query = patient_text_en if patient_text_en else doctor_response_en
+                if _rag_query:
+                    _voice_rag_results = retrieve_context(_rag_query)
             else:
                 # Voice / text only — pure chat, no image
                 # ── RAG retrieval for voice/text pipeline ──
