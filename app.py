@@ -1500,6 +1500,9 @@ if analyse_clicked:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_i:
                     tmp_i.write(img_bytes)
                     image_path = tmp_i.name
+                # ── RAG retrieval for vision pipeline ──
+                if patient_text_en:
+                    _voice_rag_results = retrieve_context(patient_text_en)
                 _query = SYSTEM_PROMPT + "\n\nPatient says: " + (patient_text_en or "Please analyse this image.")
                 doctor_response_en = analyze_image_with_query(
                     query=_query,
