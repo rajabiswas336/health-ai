@@ -43,7 +43,8 @@ def analyze_image_with_query(query: str, model: str, encoded_image: str) -> str:
 
     chat_completion = client.chat.completions.create(
         messages=messages,
-        model=model
+        model=model,
+        thinking=False
     )
 
     return chat_completion.choices[0].message.content
