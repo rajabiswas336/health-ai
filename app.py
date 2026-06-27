@@ -1421,7 +1421,7 @@ Respond in 2-3 clear sentences. Speak directly to the patient. No preamble."""
         client = Groq(api_key=GROQ_API_KEY)
         resp   = client.chat.completions.create(
             messages=history, model="qwen/qwen3.6-27b",
-            thinking=False,
+            reasoning_format="hidden",
         )
         ai_text = resp.choices[0].message.content
 
@@ -1540,7 +1540,7 @@ professional for personalized advice. Keep to 2-3 sentences. No preamble."""
                 _resp = _client.chat.completions.create(
                     messages=_history,
                     model="qwen/qwen3.6-27b",
-                    thinking=False,
+                    reasoning_format="hidden",
                 )
                 doctor_response_en = _resp.choices[0].message.content
 
