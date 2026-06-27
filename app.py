@@ -804,7 +804,7 @@ with st.sidebar:
         text-transform:uppercase;font-family:JetBrains Mono,monospace;margin-bottom:8px;'>
         Powered by</div>
     <div style='font-size:13px;color:#a0aac8;line-height:2.1;'>
-        🧠 LLaMA-4 Scout Vision<br>
+        🧠 Qwen 3.6 Vision<br>
         🎙️ Groq Whisper Large v3<br>
         🔊 ElevenLabs / edge-tts / gTTS<br>
         🌐 Deep Translator
@@ -1420,7 +1420,7 @@ Respond in 2-3 clear sentences. Speak directly to the patient. No preamble."""
     with st.spinner(""):
         client = Groq(api_key=GROQ_API_KEY)
         resp   = client.chat.completions.create(
-            messages=history, model="llama-3.3-70b-versatile",
+            messages=history, model="qwen/qwen3.6-27b",
         )
         ai_text = resp.choices[0].message.content
 
@@ -1502,7 +1502,7 @@ if analyse_clicked:
                 _query = SYSTEM_PROMPT + "\n\nPatient says: " + (patient_text_en or "Please analyse this image.")
                 doctor_response_en = analyze_image_with_query(
                     query=_query,
-                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    model="qwen/qwen3.6-27b",
                     encoded_image=encode_image(image_path),
                 )
             else:
@@ -1538,7 +1538,7 @@ professional for personalized advice. Keep to 2-3 sentences. No preamble."""
                 _history.append({"role": "user", "content": patient_text_en})
                 _resp = _client.chat.completions.create(
                     messages=_history,
-                    model="llama-3.3-70b-versatile",
+                    model="qwen/qwen3.6-27b",
                 )
                 doctor_response_en = _resp.choices[0].message.content
 
