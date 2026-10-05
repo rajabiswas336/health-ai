@@ -1420,11 +1420,9 @@ Respond in 2-3 clear sentences. Speak directly to the patient. No preamble."""
     with st.spinner(""):
         client = Groq(api_key=GROQ_API_KEY)
         resp   = client.chat.completions.create(
-            messages=history, model="qwen/qwen3.6-27b",
-            reasoning_format="hidden",
+            messages=history, model="qwen/qwen3.8-27b",
         )
         ai_text = resp.choices[0].message.content
-
     # Always attach rag_results as sources (even low-confidence) for user transparency
     st.session_state.messages.append(
         {"role": "assistant", "content": ai_text, "medical": bool(high_conf_results),
