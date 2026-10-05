@@ -1247,21 +1247,9 @@ else:
 # ── CANCER PREDICTION PANEL ──────────────────────────────────────────────────
 # ══════════════════════════════════════════════════════════════════════════════
 if st.session_state.show_cancer_pred:
-    st.markdown("""
-    <div style='background:linear-gradient(135deg,#2d1b69,#1a1145);
-        border-radius:16px;padding:14px 16px 10px;margin:8px 0;
-        border:1px solid rgba(139,92,246,0.4);
-        box-shadow:0 8px 32px rgba(139,92,246,0.2);'>
-        <div style='font-size:11px;color:#a78bfa;letter-spacing:.12em;
-            text-transform:uppercase;font-family:JetBrains Mono,monospace;
-            margin-bottom:4px;'>🧬 SKIN CANCER PREDICTION</div>
-        <div style='font-size:13px;color:#c4b5fd;line-height:1.5;'>
-            Upload a skin lesion image above, then click <strong>Run Prediction</strong>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ... UI markdown block ...
 
-    if st.session_state.stored_image:
+    if st.session_state.stored_image:          # ← defines cancer_predict_clicked
         cancer_predict_clicked = st.button(
             "🧬  Run Skin Cancer Prediction",
             use_container_width=True,
@@ -1271,13 +1259,57 @@ if st.session_state.show_cancer_pred:
         st.info("⬆️ Upload an image first (tap the ⊞ button or use the Image panel above)")
         cancer_predict_clicked = False
 
-    if cancer_predict_clicked and st.session_state.stored_image:
+    if cancer_predict_clicked and st.session_state.stored_image:   # ← my new code starts here
+        # ... validation + prediction ...
+
+
+        # ── Solution 3: Groq Vision Check ─────────────────────────────────
+        img_b64_check = base64.b64encode(st.session_state.stored_image).decode()
+        with st.spinner("🔍 Validating image..."):
+            try:
+                vision_client = Groq(api_key=GROQ_API_KEY)
+                vision_resp = vision_client.chat.completions.create(
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{img_b64_check}"}
+                            },
+                            {
+                                "type": "text",
+                                "text": "Is this image a skin lesion, mole, rash, or any dermatological condition on human skin? Reply only YES or NO."
+                            }
+                        ]
+                    }],
+                    max_tokens=5
+                )
+                vision_answer = vision_resp.choices[0].message.content.strip().upper()
+                is_skin = "YES" in vision_answer
+            except Exception:
+                is_skin = True
+
+        if not is_skin:
+            st.error("❌ Please upload an actual image of a skin lesion. This image does not appear to show a skin mole, lesion, rash, or any dermatological condition.")
+            st.stop()
+
+        # ── Run prediction ─────────────────────────────────────────────────
         with st.spinner("🧬 Running skin cancer prediction model..."):
             result = predict_skin_cancer(st.session_state.stored_image)
 
         predicted_class = result["class"]
         confidence      = result["confidence"] * 100
         risk            = result["risk"]
+
+        # ── Solution 1: Confidence Threshold ──────────────────────────────
+        if confidence < 60.0:
+            st.warning(
+                f"⚠️ Low confidence ({confidence:.1f}%) — the model is uncertain about this image. "
+                "This may not be a clear skin lesion image, or the lesion is ambiguous. "
+                "Please upload a clearer dermoscopy or close-up skin image."
+            )
+            st.stop()
 
         # ── Build result text ──────────────────────────────────────────────
         result_lines = [
@@ -1294,7 +1326,7 @@ if st.session_state.show_cancer_pred:
             bar = "█" * int(prob * 20)
             result_lines.append(f"  {cls}: {prob*100:.1f}% {bar}")
 
-        # ── Uncertainty block (Gap 4) ──────────────────────────────────────
+        # ── Uncertainty block ──────────────────────────────────────────────
         if result.get("uncertainty"):
             pred_unc = result["uncertainty"].get(predicted_class, {})
             std_pct  = pred_unc.get("std", 0) * 100
@@ -1309,7 +1341,7 @@ if st.session_state.show_cancer_pred:
         result_lines.append("⚠️ This is an AI prediction for educational purposes only.")
         result_lines.append("Please consult a dermatologist for professional diagnosis.")
 
-        # ── Safety guardrail (Gap 6) ──────────────────────────────────────
+        # ── Safety guardrail ──────────────────────────────────────────────
         if result.get("is_urgent"):
             result_lines.append("")
             result_lines.append("🚨 URGENT: Potentially malignant lesion detected.")
@@ -1317,7 +1349,7 @@ if st.session_state.show_cancer_pred:
 
         result_text = "\n".join(result_lines)
 
-        # ── Grad-CAM heatmap display (Gap 1) — shown before chat history ──
+        # ── Grad-CAM heatmap display ───────────────────────────────────────
         if result.get("gradcam_bytes"):
             st.image(
                 result["gradcam_bytes"],
@@ -1365,7 +1397,6 @@ if st.session_state.show_cancer_pred:
         st.session_state.show_image       = False
         st.session_state.input_key       += 1
         st.rerun()
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ── TEXT CHAT PIPELINE ────────────────────────────────────────────────────────
